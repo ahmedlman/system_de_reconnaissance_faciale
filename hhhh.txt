@@ -1,0 +1,3636 @@
+this is the main.py
+from home import HomePage
+from student import StudentInformation  # should be StudentInformation
+from face_recognition import FaceRecognition
+from settings import SettingsPage
+import capture_faces
+from teacher import TeacherInformation
+from database import AuthDB
+import customtkinter as ctk
+from datetime import datetime
+from login import LoginPage
+from sign_up import SignUpPage
+from database import DatabaseConnection
+from classe import ClassInformation
+class MainApp(ctk.CTk):
+        def __init__(self):
+            super().__init__()
+
+            # Window configuration
+            self.title("School Management System")
+            self.geometry("1200x700")
+            self.minsize(1000, 600)
+
+            # Custom colors
+            self.sidebar_color = "#2c3e50"
+            self.sidebar_button_color = "#34495e"
+            self.sidebar_button_hover = "#3d566e"
+            self.main_bg = "#f5f7fa"
+            self.accent_color = "#3498db"
+
+            # Initial page load
+            self.current_frame = None
+
+            # ✅ Setup database and authentication first!
+            self.db_connection = DatabaseConnection()
+            self.db_connection.connect()
+            self.auth_db = AuthDB(self.db_connection)
+
+            # ✅ Now it's safe to show the login page
+            self.show_login_page()
+        def show_login_page(self):
+            self.clear_current_frame()
+            self.login_page = LoginPage(
+                self,
+                self.on_login_success,
+                self.show_sign_up_page,
+            )
+            self.login_page.pack(fill="both", expand=True)
+            self.current_frame = self.login_page
+
+        def show_sign_up_page(self):
+            self.clear_current_frame()
+            self.sign_up_page = SignUpPage(
+                self,
+                self.on_signup_success,
+                self.show_login_page,
+            )
+            self.sign_up_page.pack(fill="both", expand=True)
+            self.current_frame = self.sign_up_page
+
+        def on_login_success(self):
+            self.clear_current_frame()
+            self.create_main_ui()
+
+        def on_signup_success(self):
+            self.show_login_page()
+
+        def create_main_ui(self):
+            # Layout configuration
+            self.grid_columnconfigure(1, weight=1)
+            self.grid_rowconfigure(0, weight=1)
+
+            # Create UI elements
+            self.create_sidebar()
+            self.create_main_content()
+            self.create_date_label()
+
+            # Initial page load
+            self.load_home()
+            self.update_date_label()
+
+        def clear_current_frame(self):
+            if hasattr(self, 'current_frame') and self.current_frame:
+                self.current_frame.destroy()
+
+        def create_sidebar(self):
+            """Create static sidebar without animations"""
+            self.sidebar = ctk.CTkFrame(
+                self,
+                fg_color=self.sidebar_color,
+                width=250,
+                corner_radius=0
+            )
+            self.sidebar.grid(row=0, column=0, sticky="nsew")
+            self.sidebar.grid_propagate(False)
+
+            # Sidebar content
+            self.create_profile_section()
+            self.create_navigation_buttons()
+
+        def create_profile_section(self):
+            """Create profile section"""
+            self.profile_frame = ctk.CTkFrame(
+                self.sidebar,
+                fg_color=self.sidebar_button_color,
+                height=120,
+                corner_radius=8
+            )
+            self.profile_frame.pack(fill="x", pady=(15, 15), padx=10)
+
+            # Profile picture
+            self.profile_pic = ctk.CTkLabel(
+                self.profile_frame,
+                text="👤",
+                font=("Arial", 28),
+                text_color="white"
+            )
+            self.profile_pic.pack(pady=(10, 5))
+
+            # Profile text
+            self.name_label = ctk.CTkLabel(
+                self.profile_frame,
+                text="Admin User",
+                font=("Arial", 14, "bold"),
+                text_color="white"
+            )
+            self.role_label = ctk.CTkLabel(
+                self.profile_frame,
+                text="Administrator",
+                font=("Arial", 12),
+                text_color="lightgray"
+            )
+            self.name_label.pack()
+            self.role_label.pack()
+
+        def create_navigation_buttons(self):
+            """Create navigation buttons"""
+            buttons = [
+                ("🏠", "Home", self.load_home),
+                ("📷", "Face Recognition", self.load_face_recognition),
+                ("👨‍🎓", "Student information", self.load_student),
+                ("👨‍🏫", "Teacher information", self.load_teacher),
+                ("👨‍🏫", "Classe information", self.load_class),
+                ("🤖", "Capture Faces", self.load_capture),
+                ("⚙️", "Settings", self.load_setting),
+                ("🚪", "Logout", self.show_login_page)
+            ]
+
+            for icon, text, command in buttons:
+                btn = ctk.CTkButton(
+                    self.sidebar,
+                    text=f"   {icon}  {text}",
+                    font=("Arial", 14),
+                    fg_color=self.sidebar_button_color,
+                    hover_color=self.sidebar_button_hover,
+                    text_color="white",
+                    corner_radius=5,
+                    command=command,
+                    anchor="w",
+                    height=40
+                )
+                btn.pack(fill="x", padx=10, pady=5)
+
+        def create_main_content(self):
+            """Create main content area"""
+            self.content = ctk.CTkFrame(
+                self,
+                fg_color=self.main_bg
+            )
+            self.content.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+
+        def create_date_label(self):
+            """Create date label"""
+            self.date_label = ctk.CTkLabel(
+                self,
+                text="",
+                font=("Arial", 12, "bold"),
+                text_color="#7f8c8d"
+            )
+            self.date_label.place(relx=0.99, rely=0.02, anchor="ne")
+
+        def update_date_label(self):
+            """Update date label with existence check"""
+            if hasattr(self, 'date_label') and self.date_label.winfo_exists():
+                self.date_label.configure(text=datetime.now().strftime("%A, %B %d %Y | %I:%M:%S %p"))
+            self.after(1000, self.update_date_label)
+
+        def load_home(self):
+            """Load home page"""
+            self.clear_content()
+            page = HomePage(self.content)
+            page.pack(expand=True, fill="both", padx=10, pady=10)
+
+        def load_face_recognition(self):
+            """Load face recognition page"""
+            self.clear_content()
+            FaceRecognition(self.content)
+
+        def load_student(self):
+            """Load student management page"""
+            self.clear_content()
+            page = StudentInformation(self.content, self.db_connection)
+            page.pack(expand=True, fill="both", padx=10, pady=10)
+
+        def load_teacher(self):
+            """Load teacher management page"""
+            self.clear_content()
+            page = TeacherInformation(self.content, self.db_connection)
+            page.pack(expand=True, fill="both", padx=10, pady=10)
+        def load_class(self):
+            self.clear_content()
+            page=ClassInformation(self.content,self.db_connection)
+            page.pack(expand=True, fill="both", padx=10, pady=10)
+        def load_setting(self):
+            """Load settings page"""
+            self.clear_content()
+            page = SettingsPage(self.content)
+            page.pack(expand=True, fill="both", padx=10, pady=10)
+
+        def load_capture(self):
+            """Load face detection page"""
+            self.clear_content()
+            capture_faces.show_capture(self.content)
+
+        def clear_content(self):
+            """Clear content area safely"""
+            if hasattr(self, 'content'):
+                for widget in self.content.winfo_children():
+                    widget.destroy()
+
+
+if __name__ == "__main__":
+    app = MainApp()
+    app.mainloop()
+-----
+this is login.py
+import customtkinter as ctk
+from PIL import Image
+import os
+from database import DatabaseConnection, AuthDB
+
+
+class LoginPage(ctk.CTkFrame):
+    def __init__(self, parent, on_login_success, show_sign_up_page):
+        super().__init__(parent, fg_color="#f5f7fa")
+        self.on_login_success = on_login_success
+        self.show_sign_up_page = show_sign_up_page
+        # Create DB connection and auth instance
+        self.db_connection = DatabaseConnection()
+        self.db_connection.connect()
+        self.auth_db = AuthDB(self.db_connection)
+        # Configure grid layout
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        # Main container
+        self.container = ctk.CTkFrame(self, fg_color="transparent")
+        self.container.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+        self.container.grid_columnconfigure(0, weight=1)
+
+        # Login form frame
+        self.login_frame = ctk.CTkFrame(
+            self.container,
+            width=400,
+            height=500,
+            corner_radius=15,
+            fg_color="white"
+        )
+        self.login_frame.grid(row=0, column=0, sticky="")
+        self.login_frame.grid_propagate(False)
+
+        # Logo
+        logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
+        try:
+            self.logo_image = ctk.CTkImage(
+                light_image=Image.open(logo_path),
+                size=(120, 120)
+            )
+            self.logo_label = ctk.CTkLabel(
+                self.login_frame,
+                image=self.logo_image,
+                text=""
+            )
+        except:
+            self.logo_label = ctk.CTkLabel(
+                self.login_frame,
+                text="🏫",
+                font=("Arial", 60)
+            )
+        self.logo_label.grid(row=0, column=0, pady=(40, 20), padx=20, sticky="nsew")
+
+        # Title
+        self.title_label = ctk.CTkLabel(
+            self.login_frame,
+            text="School Management System",
+            font=("Arial", 20, "bold"),
+            text_color="#2c3e50"
+        )
+        self.title_label.grid(row=1, column=0, pady=(0, 30), padx=20)
+
+        # Username entry
+        self.username_entry = ctk.CTkEntry(
+            self.login_frame,
+            placeholder_text="Username",
+            height=45,
+            font=("Arial", 14),
+            corner_radius=8,
+            border_color="#bdc3c7",
+            fg_color="#f8f9fa"
+        )
+        self.username_entry.grid(row=2, column=0, pady=(0, 15), padx=40, sticky="ew")
+
+        # Password entry
+        self.password_entry = ctk.CTkEntry(
+            self.login_frame,
+            placeholder_text="Password",
+            height=45,
+            font=("Arial", 14),
+            corner_radius=8,
+            border_color="#bdc3c7",
+            fg_color="#f8f9fa",
+            show="•"
+        )
+        self.password_entry.grid(row=3, column=0, pady=(0, 20), padx=40, sticky="ew")
+
+        # Login button
+        self.login_button = ctk.CTkButton(
+            self.login_frame,
+            text="Login",
+            height=45,
+            font=("Arial", 14, "bold"),
+            corner_radius=8,
+            fg_color="#3498db",
+            hover_color="#2980b9",
+            command=self.attempt_login
+        )
+        self.login_button.grid(row=4, column=0, pady=(0, 20), padx=40, sticky="ew")
+
+        # Forgot password
+        self.forgot_label = ctk.CTkLabel(
+            self.login_frame,
+            text="Forgot password?",
+            font=("Arial", 12),
+            text_color="#7f8c8d",
+            cursor="hand2"
+        )
+        self.forgot_label.grid(row=5, column=0, pady=(0, 30))
+        self.forgot_label.bind("<Button-1>", lambda e: print("Forgot password clicked"))
+
+        # Sign up prompt
+        self.signup_prompt = ctk.CTkLabel(
+            self.login_frame,
+            text="Don't have an account? Sign up",
+            font=("Arial", 12),
+            text_color="#7f8c8d",
+            cursor="hand2"
+        )
+        self.signup_prompt.grid(row=6, column=0, pady=(0, 20))
+        self.signup_prompt.bind("<Button-1>", lambda e: self.show_sign_up_page())
+
+        # Error message label (hidden by default)
+        self.error_label = ctk.CTkLabel(
+            self.login_frame,
+            text="",
+            text_color="#e74c3c",
+            font=("Arial", 12)
+        )
+        self.error_label.grid(row=7, column=0, pady=(0, 10))
+
+        # Center the login frame
+        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
+
+        # Bind Enter key to login
+        self.username_entry.bind("<Return>", lambda e: self.attempt_login())
+        self.password_entry.bind("<Return>", lambda e: self.attempt_login())
+
+    def attempt_login(self):
+        """Validate credentials and log in"""
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        # Simple validation for empty fields
+        if not username or not password:
+            self.show_error("Please enter both username and password")
+            return
+
+        # Validate user using the AuthDB class
+        user = self.auth_db.validate_user(username, password)
+
+        if user:
+            # Login successful, proceed with the on_login_success callback
+            self.on_login_success()
+        else:
+            # Invalid credentials
+            self.show_error("Invalid username or password")
+
+    def show_error(self, message):
+        """Display error message"""
+        self.error_label.configure(text=message)
+        self.after(3000, lambda: self.error_label.configure(text=""))
+---------
+this is sign_up.py
+import customtkinter as ctk
+from PIL import Image
+import os
+from database import AuthDB, DatabaseConnection
+
+
+class SignUpPage(ctk.CTkFrame):
+    def __init__(self, parent, on_signup_success, on_back_to_login):
+        super().__init__(parent, fg_color="#f5f7fa")
+        self.on_signup_success = on_signup_success
+        self.on_back_to_login = on_back_to_login
+
+        # Create DB connection and auth instance
+        self.db_connection = DatabaseConnection()
+        self.db_connection.connect()
+        self.auth_db = AuthDB(self.db_connection)
+
+        # Configure grid layout (2 columns - form and image)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        # Main container for the form
+        self.form_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.form_container.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
+
+        # Sign up form frame
+        self.signup_frame = ctk.CTkFrame(
+            self.form_container,
+            width=450,
+            height=650,
+            corner_radius=15,
+            fg_color="white"
+        )
+        self.signup_frame.grid(row=0, column=0, sticky="")
+        self.signup_frame.grid_propagate(False)
+
+        # Configure form frame grid to have 2 columns
+        self.signup_frame.grid_columnconfigure(0, weight=1)
+        self.signup_frame.grid_columnconfigure(1, weight=1)
+
+        # Back button
+        self.back_button = ctk.CTkButton(
+            self.signup_frame,
+            text="←",
+            width=30,
+            height=30,
+            corner_radius=15,
+            fg_color="#e0e0e0",
+            hover_color="#d0d0d0",
+            text_color="#2c3e50",
+            font=("Arial", 14),
+            command=self.on_back_to_login
+        )
+        self.back_button.grid(row=0, column=0, pady=(20, 0), padx=20, sticky="nw", columnspan=2)
+
+        # Logo
+        logo_path = os.path.join(os.path.dirname(__file__), "assets", "detect.jpeg")
+        try:
+            self.logo_image = ctk.CTkImage(
+                light_image=Image.open(logo_path),
+                size=(100, 100)
+            )
+            self.logo_label = ctk.CTkLabel(
+                self.signup_frame,
+                image=self.logo_image,
+                text=""
+            )
+        except:
+            self.logo_label = ctk.CTkLabel(
+                self.signup_frame,
+                text="🏫",
+                font=("Arial", 50)
+            )
+        self.logo_label.grid(row=1, column=0, pady=(10, 10), padx=20, columnspan=2)
+
+        # Title
+        self.title_label = ctk.CTkLabel(
+            self.signup_frame,
+            text="Create an Account",
+            font=("Arial", 20, "bold"),
+            text_color="#2c3e50"
+        )
+        self.title_label.grid(row=2, column=0, pady=(0, 20), padx=20, columnspan=2)
+
+        # Form fields organized in two columns to match database structure
+        left_fields = [
+            ("Full Name", "text", "John Doe"),  # matches full_name in database
+            ("Username", "text", "username"),  # matches username in database
+            ("Password", "password", "")  # matches password in database
+        ]
+
+        right_fields = [
+            ("Email", "email", "example@school.com"),  # matches email in database
+            ("Confirm Password", "password", ""),
+            ("Role", "combobox", ["Administrator", "Teacher", "Super Administrator"])  # matches role in database
+        ]
+
+        self.entries = {}
+
+        # Left column fields
+        for i, (label, field_type, placeholder) in enumerate(left_fields):
+            # Label
+            lbl = ctk.CTkLabel(
+                self.signup_frame,
+                text=label,
+                font=("Arial", 12),
+                text_color="#34495e",
+                anchor="w"
+            )
+            lbl.grid(row=3 + i * 2, column=0, pady=(10, 0), padx=(40, 10), sticky="ew")
+
+            # Field
+            if field_type in ["text", "email", "password"]:
+                entry = ctk.CTkEntry(
+                    self.signup_frame,
+                    placeholder_text=placeholder,
+                    height=40,
+                    font=("Arial", 13),
+                    corner_radius=8,
+                    border_color="#bdc3c7",
+                    fg_color="#f8f9fa"
+                )
+                if field_type == "password":
+                    entry.configure(show="•")
+                entry.grid(row=4 + i * 2, column=0, pady=(0, 5), padx=(40, 10), sticky="ew")
+                self.entries[label.lower().replace(" ", "_")] = entry
+
+        # Right column fields
+        for i, (label, field_type, placeholder) in enumerate(right_fields):
+            # Label
+            lbl = ctk.CTkLabel(
+                self.signup_frame,
+                text=label,
+                font=("Arial", 12),
+                text_color="#34495e",
+                anchor="w"
+            )
+            lbl.grid(row=3 + i * 2, column=1, pady=(10, 0), padx=(10, 40), sticky="ew")
+
+            # Field
+            if field_type in ["text", "email", "password"]:
+                entry = ctk.CTkEntry(
+                    self.signup_frame,
+                    placeholder_text=placeholder,
+                    height=40,
+                    font=("Arial", 13),
+                    corner_radius=8,
+                    border_color="#bdc3c7",
+                    fg_color="#f8f9fa"
+                )
+                if field_type == "password":
+                    entry.configure(show="•")
+                entry.grid(row=4 + i * 2, column=1, pady=(0, 5), padx=(10, 40), sticky="ew")
+                self.entries[label.lower().replace(" ", "_")] = entry
+            elif field_type == "combobox":
+                combo = ctk.CTkComboBox(
+                    self.signup_frame,
+                    values=placeholder,
+                    height=40,
+                    font=("Arial", 13),
+                    corner_radius=8,
+                    border_color="#bdc3c7",
+                    fg_color="#f8f9fa",
+                    button_color="#3498db",
+                    dropdown_fg_color="white",
+                    dropdown_hover_color="#f0f0f0"
+                )
+                combo.grid(row=4 + i * 2, column=1, pady=(0, 5), padx=(10, 40), sticky="ew")
+                self.entries["role"] = combo
+
+        # Terms checkbox (span both columns)
+        self.terms_var = ctk.StringVar(value="off")
+        self.terms_check = ctk.CTkCheckBox(
+            self.signup_frame,
+            text="I agree to the Terms and Conditions",
+            variable=self.terms_var,
+            onvalue="on",
+            offvalue="off",
+            font=("Arial", 12),
+            text_color="#7f8c8d",
+            checkbox_width=18,
+            checkbox_height=18
+        )
+        self.terms_check.grid(row=9, column=0, pady=(10, 0), padx=35, sticky="w", columnspan=2)
+
+        # Sign up button (span both columns)
+        self.signup_button = ctk.CTkButton(
+            self.signup_frame,
+            text="Sign Up",
+            height=45,
+            font=("Arial", 14, "bold"),
+            corner_radius=8,
+            fg_color="#3498db",
+            hover_color="#2980b9",
+            command=self.attempt_signup
+        )
+        self.signup_button.grid(row=10, column=0, pady=(20, 15), padx=40, sticky="ew", columnspan=2)
+
+        # Already have account (span both columns)
+        self.login_prompt = ctk.CTkLabel(
+            self.signup_frame,
+            text="Already have an account? Login",
+            font=("Arial", 12),
+            text_color="#7f8c8d",
+            cursor="hand2"
+        )
+        self.login_prompt.grid(row=11, column=0, pady=(0, 30), columnspan=2)
+        self.login_prompt.bind("<Button-1>", lambda e: self.on_back_to_login())
+
+        # Error message label (hidden by default, span both columns)
+        self.error_label = ctk.CTkLabel(
+            self.signup_frame,
+            text="",
+            text_color="#e74c3c",
+            font=("Arial", 12)
+        )
+        self.error_label.grid(row=12, column=0, pady=(0, 10), columnspan=2)
+
+        # Center the form in its container
+        self.form_container.grid_rowconfigure(0, weight=1)
+        self.form_container.grid_columnconfigure(0, weight=1)
+
+    def attempt_signup(self):
+        """Validate and process sign up"""
+        # Get all values - matching database column names
+        full_name = self.entries["full_name"].get()
+        username = self.entries["username"].get()
+        password = self.entries["password"].get()
+        confirm_password = self.entries["confirm_password"].get()
+        email = self.entries["email"].get()
+        role = self.entries["role"].get()
+        terms_accepted = self.terms_var.get() == "on"
+
+        # Validate
+        if not all([full_name, username, password, confirm_password, email, role]):
+            self.show_error("Please fill in all fields")
+            return
+
+        if password != confirm_password:
+            self.show_error("Passwords do not match")
+            return
+
+        if len(password) < 6:
+            self.show_error("Password must be at least 6 characters")
+            return
+
+        if not terms_accepted:
+            self.show_error("You must accept the terms and conditions")
+            return
+
+        # Try to create the user
+        try:
+            result = self.auth_db.create_user(full_name, username, password, email, role)
+
+            if result == True:
+                # User created successfully
+                self.show_error("")  # Clear any errors
+                self.on_signup_success()  # Proceed with the signup success callback
+            elif result == "username_exists":
+                self.show_error("Username already exists")
+            elif result == "email_exists":
+                self.show_error("Email already exists")
+            else:
+                self.show_error("An error occurred. Please try again later.")
+        except Exception as e:
+            self.show_error(f"Error: {str(e)}")
+
+    def show_error(self, message):
+        """Display error message"""
+        self.error_label.configure(text=message)
+        self.after(3000, lambda: self.error_label.configure(text=""))
+---------
+this is home.py
+import mysql.connector
+from mysql.connector import Error
+import customtkinter as ctk
+from tkinter import messagebox
+from PIL import Image
+import os
+from datetime import datetime
+from tkinter import ttk
+from database import *
+from student import StudentInformation
+
+
+class HomePage(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(parent, fg_color="#f5f7fa")
+        self.display_student_details = StudentInformation
+        self.filter_students = StudentInformation
+        self.db = StudentInformation
+        self.search_students = StudentInformation
+        self.parent = parent
+
+        # UI Configuration
+        self.font_title = ("Arial", 24, "bold")
+        self.font_subtitle = ("Arial", 14)
+        self.font_normal = ("Arial", 12)
+        self.primary_color = "#3498db"
+        self.secondary_color = "#2c3e50"
+        self.accent_color = "#e74c3c"
+
+        # Database connection
+        self.connection = self.create_db_connection()
+
+        # ✅ Fix: Define columns for Treeview
+        self.tree_columns = ["ID", "Name", "Class", "Teacher", "Status", "Last Attendance"]
+
+        # UI Elements
+        self.create_widgets()
+        self.load_student_data()
+
+    def create_db_connection(self):
+        try:
+            connection = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="student_management"
+            )
+            if connection.is_connected():
+                print("Connected to MySQL database")
+            return connection
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+            messagebox.showerror("Database Error", f"Failed to connect to database:\n{e}")
+            return None
+
+    def create_widgets(self):
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.pack(pady=20, padx=20, fill="x")
+
+        ctk.CTkLabel(
+            header_frame,
+            text="🏠 Student Dashboard",
+            font=self.font_title,
+            text_color=self.secondary_color
+        ).pack(side="left")
+
+        stats_frame = ctk.CTkFrame(self, height=80, fg_color="white", corner_radius=10)
+        stats_frame.pack(fill="x", padx=20, pady=(0, 20))
+
+        self.total_label = ctk.CTkLabel(stats_frame, text="Total: 0", font=self.font_subtitle)
+        self.total_label.pack(side="left", padx=20, pady=10)
+
+        self.present_label = ctk.CTkLabel(stats_frame, text="Present: 0", font=self.font_subtitle)
+        self.present_label.pack(side="left", padx=20, pady=10)
+
+        self.absent_label = ctk.CTkLabel(stats_frame, text="Absent: 0", font=self.font_subtitle)
+        self.absent_label.pack(side="left", padx=20, pady=10)
+
+        filter_frame = ctk.CTkFrame(self, fg_color="transparent")
+        filter_frame.pack(fill="x", padx=20, pady=(0, 10))
+
+        ctk.CTkLabel(
+            filter_frame,
+            text="Filter by Teacher:",
+            font=self.font_normal
+        ).pack(side="left", padx=(0, 10))
+
+        self.teacher_filter = ctk.CTkComboBox(
+            filter_frame,
+            values=self.get_teachers(),
+            command=self.filter_students,
+            dropdown_font=self.font_normal,
+            button_color=self.primary_color,
+            width=200
+        )
+        self.teacher_filter.pack(side="left", padx=(0, 20))
+
+        self.search_var = ctk.StringVar()
+        self.search_var.trace("w", self.search_students)
+        search_entry = ctk.CTkEntry(
+            filter_frame,
+            textvariable=self.search_var,
+            placeholder_text="Search students...",
+            width=250
+        )
+        search_entry.pack(side="right")
+
+        content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        content_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        list_frame = ctk.CTkFrame(content_frame, fg_color="white", corner_radius=10)
+        list_frame.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+        self.student_tree = ttk.Treeview(
+            list_frame,
+            columns=self.tree_columns,
+            show="headings",
+            height=15
+        )
+
+        for col in self.tree_columns:
+            self.student_tree.heading(col, text=col)
+            self.student_tree.column(col, width=120, anchor="center")
+
+        self.student_tree.pack(fill="both", expand=True, padx=10, pady=10)
+        self.student_tree.bind("<<TreeviewSelect>>", self.display_student_details)
+
+        details_frame = ctk.CTkFrame(content_frame, width=300, fg_color="white", corner_radius=10)
+        details_frame.pack(side="right", fill="y", padx=(10, 0))
+        details_frame.pack_propagate(False)
+
+        self.photo_frame = ctk.CTkFrame(details_frame, height=200, width=200, fg_color="#ecf0f1")
+        self.photo_frame.pack(pady=20)
+        self.photo_frame.pack_propagate(False)
+
+        self.photo_label = ctk.CTkLabel(
+            self.photo_frame,
+            text="Select a student",
+            font=self.font_normal,
+            text_color="#7f8c8d"
+        )
+        self.photo_label.place(relx=0.5, rely=0.5, anchor="center")
+
+        self.details_labels = {}
+        detail_fields = ["ID", "Name", "Class", "Teacher", "Last Attendance"]
+
+        for field in detail_fields:
+            frame = ctk.CTkFrame(details_frame, fg_color="transparent")
+            frame.pack(fill="x", padx=10, pady=2)
+
+            ctk.CTkLabel(
+                frame,
+                text=f"{field}:",
+                font=self.font_normal,
+                text_color=self.secondary_color,
+                width=100,
+                anchor="e"
+            ).pack(side="left")
+
+            self.details_labels[field.lower()] = ctk.CTkLabel(
+                frame,
+                text="",
+                font=self.font_normal,
+                text_color="black",
+                anchor="w"
+            )
+            self.details_labels[field.lower()].pack(side="left", fill="x", expand=True)
+
+        buttons_frame = ctk.CTkFrame(details_frame, fg_color="transparent")
+        buttons_frame.pack(fill="x", padx=10, pady=20)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="Mark Present",
+            #command=self.mark_present(),
+            fg_color="#2ecc71",
+            hover_color="#27ae60"
+        ).pack(side="left", fill="x", expand=True, padx=5)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="Mark Absent",
+            #command=self.mark_absent,
+            fg_color=self.accent_color,
+            hover_color="#c0392b"
+        ).pack(side="left", fill="x", expand=True, padx=5)
+
+    def load_student_data(self, filter_teacher=None, search_query=None):
+        try:
+            students = self.db.get_students(filter_teacher, search_query)
+
+            # Clear existing data
+            for item in self.student_tree.get_children():
+                self.student_tree.delete(item)
+
+            # Insert new data
+            for student in students:
+                self.student_tree.insert("", "end", values=student)
+
+            self.update_stats(students)
+
+        except Exception as e:
+            messagebox.showerror("Database Error", str(e))
+
+    def get_teachers(self):
+        try:
+            return self.db.get_teachers()
+        except Exception as e:
+            messagebox.showerror("Database Error", str(e))
+            return ["All"]
+
+    def load_student_photo(self, student_id):
+        try:
+            photo_path = self.db.get_student_photo(student_id)
+
+            if photo_path and os.path.exists(photo_path):
+                image = Image.open(photo_path)
+                image = image.resize((200, 200))
+                ctk_image = ctk.CTkImage(light_image=image, dark_image=image, size=(200, 200))
+                self.photo_label.configure(image=ctk_image, text="")
+                self.photo_label.image = ctk_image
+            else:
+                self.photo_label.configure(
+                    text="No photo available",
+                    image=None,
+                    font=self.font_normal,
+                    text_color="#7f8c8d"
+                )
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def update_attendance(self, status):
+        selected = self.student_tree.focus()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select a student first")
+            return
+
+        student_data = self.student_tree.item(selected)["values"]
+        if not student_data:
+            return
+
+        try:
+            success = self.db.update_attendance(student_data[0], student_data[1], status)
+            if success:
+                self.load_student_data()
+                messagebox.showinfo("Success", f"Marked {student_data[1]} as {status}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+---------
+this is student.py
+import os
+import cv2
+from tkinter import filedialog, messagebox
+import customtkinter as ctk
+from PIL import Image, ImageTk
+import shutil
+from database import StudentDB
+
+
+class StudentInformation(ctk.CTkFrame):
+    def __init__(self, parent, db_connection):
+        super().__init__(parent, fg_color="#f5f7fa")
+        self.parent = parent
+        self.db_connection = db_connection
+        self.db = StudentDB(self.db_connection)
+
+        # UI Configuration
+        self.font_title = ("Arial", 24, "bold")
+        self.font_subtitle = ("Arial", 14)
+        self.font_normal = ("Arial", 12)
+        self.primary_color = "#3498db"
+        self.secondary_color = "#2c3e50"
+        self.success_color = "#2ecc71"
+        self.warning_color = "#f39c12"
+        self.danger_color = "#e74c3c"
+
+        # Student photo path
+        self.current_photo_path = None
+
+        # Create UI
+        self.create_ui()
+
+    def create_ui(self):
+        """Creates the student management UI"""
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title
+        ctk.CTkLabel(
+            main_container,
+            text="👨‍🎓 Student Management System",
+            font=self.font_title,
+            text_color=self.secondary_color
+        ).pack(pady=(0, 20))
+
+        # Content frame
+        content_frame = ctk.CTkFrame(main_container, corner_radius=15)
+        content_frame.pack(fill="both", expand=True)
+
+        # Form section
+        form_frame = ctk.CTkFrame(content_frame, width=400, corner_radius=10)
+        form_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+
+        # Photo section
+        photo_frame = ctk.CTkFrame(content_frame, width=300, corner_radius=10)
+        photo_frame.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+
+        # Configure grid weights
+        content_frame.grid_columnconfigure(0, weight=1)
+        content_frame.grid_columnconfigure(1, weight=1)
+        content_frame.grid_rowconfigure(0, weight=1)
+
+        # Form fields
+        self.create_form_fields(form_frame)
+        self.create_photo_section(photo_frame)
+
+        # Action buttons
+        self.create_action_buttons(form_frame)
+
+    def create_form_fields(self, parent):
+        """Creates the form input fields"""
+        fields = [
+            ("Student ID:", "var_ID", True),
+            ("Full Name:", "var_nom", True),
+            ("Class:", "var_classe", False),
+            ("Email:", "var_email", False),
+            ("Phone:", "var_telephone", False),
+            ("Teacher:", "var_enseignant", False)
+        ]
+
+        for idx, (label_text, var_name, required) in enumerate(fields):
+            setattr(self, var_name, ctk.StringVar())
+
+            label = ctk.CTkLabel(
+                parent,
+                text=label_text,
+                font=self.font_normal,
+                text_color=self.secondary_color
+            )
+            label.grid(row=idx, column=0, sticky="w", padx=10, pady=5)
+
+            entry = ctk.CTkEntry(
+                parent,
+                textvariable=getattr(self, var_name),
+                font=self.font_normal,
+                width=250,
+                border_color=self.primary_color,
+                corner_radius=8
+            )
+            entry.grid(row=idx, column=1, padx=10, pady=5)
+
+            if required:
+                ctk.CTkLabel(
+                    parent,
+                    text="*",
+                    text_color=self.danger_color,
+                    font=("Arial", 14, "bold")
+                ).grid(row=idx, column=2, sticky="w", padx=(0, 10))
+
+    def create_photo_section(self, parent):
+        """Creates the photo upload section"""
+        self.photo_frame = ctk.CTkFrame(
+            parent,
+            width=200,
+            height=200,
+            corner_radius=10,
+            fg_color="#ecf0f1"
+        )
+        self.photo_frame.pack(pady=(20, 10))
+        self.photo_frame.pack_propagate(False)
+
+        self.photo_label = ctk.CTkLabel(
+            self.photo_frame,
+            text="No Image Selected",
+            font=self.font_normal,
+            text_color="#7f8c8d"
+        )
+        self.photo_label.place(relx=0.5, rely=0.5, anchor="center")
+
+        ctk.CTkButton(
+            parent,
+            text="📷 Upload Photo",
+            font=self.font_normal,
+            fg_color=self.primary_color,
+            hover_color="#2980b9",
+            command=self.upload_photo,
+            width=200,
+            height=40,
+            corner_radius=8
+        ).pack(pady=10)
+
+        ctk.CTkButton(
+            parent,
+            text="🔍 Search Student",
+            font=self.font_normal,
+            fg_color=self.secondary_color,
+            hover_color="#34495e",
+            command=self.search_student,
+            width=200,
+            height=40,
+            corner_radius=8
+        ).pack(pady=10)
+
+    def create_action_buttons(self, parent):
+        """Creates the action buttons"""
+        buttons_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        buttons_frame.grid(row=6, column=0, columnspan=3, pady=20)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="➕ Add Student",
+            font=self.font_normal,
+            fg_color=self.success_color,
+            hover_color="#27ae60",
+            command=self.add_student,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="🔄 Update",
+            font=self.font_normal,
+            fg_color=self.warning_color,
+            hover_color="#e67e22",
+            command=self.update_student,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="🗑️ Remove",
+            font=self.font_normal,
+            fg_color=self.danger_color,
+            hover_color="#c0392b",
+            command=self.remove_student,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="🧹 Clear",
+            font=self.font_normal,
+            fg_color="#95a5a6",
+            hover_color="#7f8c8d",
+            command=self.clear_fields,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+    def upload_photo(self):
+        """Handles student photo upload"""
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image Files", "*.jpg *.jpeg *.png")]
+        )
+        if file_path:
+            student_id = self.var_ID.get()
+            if not student_id:
+                messagebox.showwarning("Warning", "Please enter Student ID first!")
+                return
+
+            try:
+                # Create directory for student if not exists
+                os.makedirs(f"dataset/{student_id}", exist_ok=True)
+
+                # Copy the image to dataset directory
+                target_path = f"dataset/{student_id}/{os.path.basename(file_path)}"
+                shutil.copy(file_path, target_path)
+
+                # Load and display the image
+                image = Image.open(target_path)
+                image = image.resize((200, 200))
+                ctk_image = ctk.CTkImage(
+                    light_image=image,
+                    dark_image=image,
+                    size=(200, 200)
+                )
+                self.photo_label.configure(image=ctk_image, text="")
+                self.photo_label.image = ctk_image
+                self.current_photo_path = target_path
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to upload photo: {str(e)}")
+
+    def add_student(self):
+        """Adds a new student to the database"""
+        if not self.validate_fields():
+            return
+
+        student_data = {
+            "student_id": self.var_ID.get(),
+            "name": self.var_nom.get(),
+            "student_class": self.var_classe.get(),
+            "email": self.var_email.get(),
+            "phone": self.var_telephone.get(),
+            "teacher": self.var_enseignant.get(),
+            "photo": self.current_photo_path
+        }
+
+        success = self.db.add_student(**student_data)
+
+        try:
+            success = self.db.add_student(*student_data)
+            if success:
+                messagebox.showinfo("Success", "Student added successfully!")
+                self.clear_fields()
+            else:
+                messagebox.showerror("Error", "Failed to add student")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def update_student(self):
+        """Updates an existing student"""
+        if not self.validate_fields():
+            return
+
+        student_data = (
+            self.var_nom.get(),
+            self.var_classe.get(),
+            self.var_email.get(),
+            self.var_telephone.get(),
+            self.var_enseignant.get(),
+            self.current_photo_path,
+            self.var_ID.get()
+        )
+
+        try:
+            success = self.db.update_student(student_data)
+            if success:
+                messagebox.showinfo("Success", "Student updated successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to update student")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def remove_student(self):
+        """Removes a student from the database"""
+        student_id = self.var_ID.get()
+        if not student_id:
+            messagebox.showwarning("Warning", "Please enter a Student ID!")
+            return
+
+        if messagebox.askyesno("Confirm", f"Are you sure you want to delete student {student_id}?"):
+            try:
+                # Remove from database
+                success = self.db.remove_student(student_id)
+
+                # Remove from dataset directory
+                if os.path.exists(f"dataset/{student_id}"):
+                    shutil.rmtree(f"dataset/{student_id}")
+
+                if success:
+                    messagebox.showinfo("Success", "Student removed successfully!")
+                    self.clear_fields()
+                else:
+                    messagebox.showerror("Error", "Failed to remove student")
+            except Exception as e:
+                messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def search_student(self):
+        """Searches for a student by ID"""
+        student_id = self.var_ID.get()
+        if not student_id:
+            messagebox.showwarning("Warning", "Please enter a Student ID!")
+            return
+
+        try:
+            student = self.db.get_student_by_id(student_id)
+            if student:
+                self.var_nom.set(student['name'])
+                self.var_classe.set(student['class'])
+                self.var_email.set(student['email'])
+                self.var_telephone.set(student['phone'])
+                self.var_enseignant.set(student['teacher'])
+
+                # Load photo if exists
+                if student['photo'] and os.path.exists(student['photo']):
+                    image = Image.open(student['photo'])
+                    image = image.resize((200, 200))
+                    ctk_image = ctk.CTkImage(
+                        light_image=image,
+                        dark_image=image,
+                        size=(200, 200)
+                    )
+                    self.photo_label.configure(image=ctk_image, text="")
+                    self.photo_label.image = ctk_image
+                    self.current_photo_path = student['photo']
+
+                messagebox.showinfo("Found", f"Student {student_id} found!")
+            else:
+                messagebox.showinfo("Not Found", f"Student {student_id} not found!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def clear_fields(self):
+        """Clears all form fields and resets photo"""
+        for var in [
+            self.var_ID,
+            self.var_nom,
+            self.var_classe,
+            self.var_email,
+            self.var_telephone,
+            self.var_enseignant
+        ]:
+            var.set("")
+
+        self.current_photo_path = None
+        self.photo_label.configure(text="No Image Selected", image=None)
+
+    def validate_fields(self):
+        """Validates required fields"""
+        if not self.var_ID.get():
+            messagebox.showwarning("Validation Error", "Student ID is required!")
+            return False
+        if not self.var_nom.get():
+            messagebox.showwarning("Validation Error", "Full Name is required!")
+            return False
+        return True
+
+    @classmethod
+    def get_students(cls, filter_teacher, search_query):
+        pass
+------------------
+this is teacher.py
+import os
+#import cv2
+from tkinter import filedialog
+import customtkinter as ctk
+from PIL import Image
+#import shutil
+
+from database import *
+
+
+class TeacherInformation(ctk.CTkFrame):
+    def __init__(self, parent, db_connection):
+        super().__init__(parent, fg_color="#f5f7fa")
+        self.parent = parent
+        self.db_connection = db_connection
+        self.db = TeacherDB(self.db_connection)
+        # UI Configuration
+        self.font_title = ("Arial", 24, "bold")
+        self.font_subtitle = ("Arial", 14)
+        self.font_normal = ("Arial", 12)
+        self.primary_color = "#3498db"
+        self.secondary_color = "#2c3e50"
+        self.success_color = "#2ecc71"
+        self.warning_color = "#f39c12"
+        self.danger_color = "#e74c3c"
+
+        # Teacher photo path
+        self.current_photo_path = None
+
+        # Create UI
+        self.create_ui()
+
+    def create_ui(self):
+        """Creates the teacher management UI"""
+        # Main container
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title
+        ctk.CTkLabel(
+            main_container,
+            text="👨‍🏫 Teacher Management System",
+            font=self.font_title,
+            text_color=self.secondary_color
+        ).pack(pady=(0, 20))
+
+        # Content frame
+        content_frame = ctk.CTkFrame(main_container, corner_radius=15)
+        content_frame.pack(fill="both", expand=True)
+
+        # Form section
+        form_frame = ctk.CTkFrame(content_frame, width=400, corner_radius=10)
+        form_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+
+        # Photo section
+        photo_frame = ctk.CTkFrame(content_frame, width=300, corner_radius=10)
+        photo_frame.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+
+        # Configure grid weights
+        content_frame.grid_columnconfigure(0, weight=1)
+        content_frame.grid_columnconfigure(1, weight=1)
+        content_frame.grid_rowconfigure(0, weight=1)
+
+        # Form fields
+        self.create_form_fields(form_frame)
+        self.create_photo_section(photo_frame)
+
+        # Action buttons
+        self.create_action_buttons(form_frame)
+
+    def create_form_fields(self, parent):
+        """Creates the form input fields"""
+        fields = [
+            ("Teacher ID:", "var_ID", True),
+            ("CIN:", "var_CIN", True),
+            ("Full Name:", "var_nom", True),
+            ("Class:", "var_classe", False),
+            ("Email:", "var_email", False),
+            ("Phone:", "var_telephone", False),
+            ("Subjects:", "var_subjects", False)
+        ]
+
+        # Create variables and fields
+        for idx, (label_text, var_name, required) in enumerate(fields):
+            # Create StringVar
+            setattr(self, var_name, ctk.StringVar())
+
+            # Create label
+            label = ctk.CTkLabel(
+                parent,
+                text=label_text,
+                font=self.font_normal,
+                text_color=self.secondary_color
+            )
+            label.grid(row=idx, column=0, sticky="w", padx=10, pady=5)
+
+            # Create entry field
+            entry = ctk.CTkEntry(
+                parent,
+                textvariable=getattr(self, var_name),
+                font=self.font_normal,
+                width=250,
+                border_color=self.primary_color,
+                corner_radius=8
+            )
+            entry.grid(row=idx, column=1, padx=10, pady=5)
+
+            # Add asterisk for required fields
+            if required:
+                ctk.CTkLabel(
+                    parent,
+                    text="*",
+                    text_color=self.danger_color,
+                    font=("Arial", 14, "bold")
+                ).grid(row=idx, column=2, sticky="w", padx=(0, 10))
+
+    def create_photo_section(self, parent):
+        """Creates the photo upload section"""
+        # Photo display
+        self.photo_frame = ctk.CTkFrame(
+            parent,
+            width=200,
+            height=200,
+            corner_radius=10,
+            fg_color="#ecf0f1"
+        )
+        self.photo_frame.pack(pady=(20, 10))
+        self.photo_frame.pack_propagate(False)
+
+        self.photo_label = ctk.CTkLabel(
+            self.photo_frame,
+            text="No Image Selected",
+            font=self.font_normal,
+            text_color="#7f8c8d"
+        )
+        self.photo_label.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Upload button
+        ctk.CTkButton(
+            parent,
+            text="📷 Upload Photo",
+            font=self.font_normal,
+            fg_color=self.primary_color,
+            hover_color="#2980b9",
+            command=self.upload_photo,
+            width=200,
+            height=40,
+            corner_radius=8
+        ).pack(pady=10)
+
+        # Search button
+        ctk.CTkButton(
+            parent,
+            text="🔍 Search Teacher",
+            font=self.font_normal,
+            fg_color=self.secondary_color,
+            hover_color="#34495e",
+            command=self.search_teacher,
+            width=200,
+            height=40,
+            corner_radius=8
+        ).pack(pady=10)
+
+    def create_action_buttons(self, parent):
+        """Creates the action buttons"""
+        buttons_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        buttons_frame.grid(row=6, column=0, columnspan=3, pady=20)
+
+        # Add button
+        ctk.CTkButton(
+            buttons_frame,
+            text="➕ Add Teacher",
+            font=self.font_normal,
+            fg_color=self.success_color,
+            hover_color="#27ae60",
+            command=self.add_teacher,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        # Update button
+        ctk.CTkButton(
+            buttons_frame,
+            text="🔄 Update",
+            font=self.font_normal,
+            fg_color=self.warning_color,
+            hover_color="#e67e22",
+            command=self.update_teacher,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        # Remove button
+        ctk.CTkButton(
+            buttons_frame,
+            text="🗑️ Remove",
+            font=self.font_normal,
+            fg_color=self.danger_color,
+            hover_color="#c0392b",
+            command=self.remove_teacher,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        # Clear button
+        ctk.CTkButton(
+            buttons_frame,
+            text="🧹 Clear",
+            font=self.font_normal,
+            fg_color="#95a5a6",
+            hover_color="#7f8c8d",
+            command=self.clear_fields,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+    def upload_photo(self):
+        """Handles teacher photo upload"""
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image Files", "*.jpg *.jpeg *.png")]
+        )
+        if file_path:
+            try:
+                # Load and display the image
+                image = Image.open(file_path)
+                image = image.resize((200, 200))
+                ctk_image = ctk.CTkImage(
+                    light_image=image,
+                    dark_image=image,
+                    size=(200, 200)
+                )
+                self.photo_label.configure(image=ctk_image, text="")
+                self.current_photo_path = file_path
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load image: {str(e)}")
+
+    def add_teacher(self):
+        """Adds a new teacher to the database"""
+        if not self.validate_fields():
+            return
+
+        teacher_data = {
+            "teacher_id": self.var_ID.get(),
+            "cin": self.var_CIN.get(),
+            "name": self.var_nom.get(),
+            "class_assigned": self.var_classe.get(),
+            "email": self.var_email.get(),
+            "phone": self.var_telephone.get(),
+            "subjects": self.var_subjects.get(),
+            "photo": self.current_photo_path
+        }
+
+        #success = self.db.add_teacher(**teacher_data)
+
+        try:
+            success = self.db.add_teacher(**teacher_data)
+            if success:
+                messagebox.showinfo("Success", "Teacher added successfully!")
+                self.clear_fields()
+            else:
+                messagebox.showerror("Error", "Failed to add teacher")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def update_teacher(self):
+        """Updates an existing teacher"""
+        if not self.validate_fields():
+            return
+
+        teacher_data = (
+            self.var_CIN.get(),
+            self.var_nom.get(),
+            self.var_classe.get(),
+            self.var_email.get(),
+            self.var_telephone.get(),
+            self.var_subjects.get(),
+            self.current_photo_path,
+            self.var_ID.get()
+        )
+
+        try:
+            success = self.db.update_teacher(*teacher_data)
+            if success:
+                messagebox.showinfo("Success", "Teacher updated successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to update teacher")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def remove_teacher(self):
+        """Removes a teacher from the database"""
+        teacher_id = self.var_ID.get()
+        if not teacher_id:
+            messagebox.showwarning("Warning", "Please enter a Teacher ID!")
+            return
+
+        if messagebox.askyesno("Confirm", f"Are you sure you want to delete teacher {teacher_id}?"):
+            try:
+                success = self.db.remove_teacher(teacher_id)
+                if success:
+                    messagebox.showinfo("Success", "Teacher removed successfully!")
+                    self.clear_fields()
+                else:
+                    messagebox.showerror("Error", "Failed to remove teacher")
+            except Exception as e:
+                messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def search_teacher(self):
+        """Searches for a teacher by ID"""
+        teacher_id = self.var_ID.get()
+        if not teacher_id:
+            messagebox.showwarning("Warning", "Please enter a Teacher ID!")
+            return
+
+        try:
+            teacher = self.db.get_teacher_by_id(teacher_id)
+            if teacher:
+                self.var_CIN.set(teacher['cin'])
+                self.var_nom.set(teacher['name'])
+                self.var_classe.set(teacher['class'])
+                self.var_email.set(teacher['email'])
+                self.var_telephone.set(teacher['phone'])
+                self.var_subjects.set(teacher['subjects'])
+
+                # Load photo if exists
+                if teacher['photo'] and os.path.exists(teacher['photo']):
+                    image = Image.open(teacher['photo'])
+                    image = image.resize((200, 200))
+                    ctk_image = ctk.CTkImage(
+                        light_image=image,
+                        dark_image=image,
+                        size=(200, 200)
+                    )
+                    self.photo_label.configure(image=ctk_image, text="")
+                    self.photo_label.image = ctk_image
+                    self.current_photo_path = teacher['photo']
+
+                messagebox.showinfo("Found", f"Teacher {teacher_id} found!")
+            else:
+                messagebox.showinfo("Not Found", f"Teacher {teacher_id} not found!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def clear_fields(self):
+        """Clears all form fields and resets photo"""
+        for var in [
+            self.var_ID,
+            self.var_CIN,
+            self.var_nom,
+            self.var_classe,
+            self.var_email,
+            self.var_telephone,
+            self.var_subjects
+        ]:
+            var.set("")
+
+        self.current_photo_path = None
+        self.photo_label.configure(text="No Image Selected", image=None)
+
+    def validate_fields(self):
+        """Validates required fields"""
+        if not self.var_ID.get():
+            messagebox.showwarning("Validation Error", "Teacher ID is required!")
+            return False
+        if not self.var_CIN.get():
+            messagebox.showwarning("Validation Error", "CIN is required!")
+            return False
+        if not self.var_nom.get():
+            messagebox.showwarning("Validation Error", "Full Name is required!")
+            return False
+        return True
+---------
+this is train.py
+import tensorflow as tf
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, Dropout, GlobalAveragePooling2D
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from sklearn.model_selection import train_test_split
+import numpy as np
+import os
+import cv2
+from datetime import datetime
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+# === Configuration ===
+IMG_SIZE = 224
+DATASET_PATH = "dataset"
+MODEL_PATH = "face_model.h5"  # For recognition
+LABEL_MAP_PATH = "label_map.npy"  # For recognition
+VALID_IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png')
+MIN_SAMPLES_PER_CLASS = 5
+AUGMENTATION_FACTOR = 3
+
+
+class FaceTrainer:
+    def __init__(self):
+        self.model = None
+        self.label_map = {}
+        self.reverse_label_map = {}
+        self.history = None
+
+    def load_training_data(self):
+        """Load and preprocess training data with augmentation"""
+        images, labels = [], []
+
+        # Load label map if exists
+        if os.path.exists(LABEL_MAP_PATH):
+            self.label_map = np.load(LABEL_MAP_PATH, allow_pickle=True).item()
+            self.reverse_label_map = {v: k for k, v in self.label_map.items()}
+            next_label_id = max(self.label_map.values()) + 1
+        else:
+            next_label_id = 0
+
+        class_counts = {}
+        for folder in os.listdir(DATASET_PATH):
+            folder_path = os.path.join(DATASET_PATH, folder)
+            if not os.path.isdir(folder_path):
+                continue
+
+            student_id = folder.split("_")[0]
+            if student_id not in self.label_map:
+                self.label_map[student_id] = next_label_id
+                self.reverse_label_map[next_label_id] = student_id
+                next_label_id += 1
+                class_counts[student_id] = 0
+
+            for img_name in os.listdir(folder_path):
+                if not img_name.lower().endswith(VALID_IMAGE_EXTENSIONS):
+                    continue
+
+                img_path = os.path.join(folder_path, img_name)
+                try:
+                    img = cv2.imread(img_path)
+                    if img is None:
+                        continue
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
+
+                    # Original
+                    images.append(img / 255.0)
+                    labels.append(self.label_map[student_id])
+                    class_counts[student_id] += 1
+
+                    # Augmented
+                    for _ in range(AUGMENTATION_FACTOR):
+                        augmented = self.augment_image(img)
+                        images.append(augmented / 255.0)
+                        labels.append(self.label_map[student_id])
+                        class_counts[student_id] += 1
+
+                except Exception as e:
+                    print(f"Error processing {img_path}: {e}")
+                    continue
+
+        # Warn if any class has too few samples
+        for student_id, count in class_counts.items():
+            if count < MIN_SAMPLES_PER_CLASS:
+                print(f"⚠️ Warning: Class {student_id} has only {count} samples")
+
+        if not images:
+            raise ValueError("No training data found.")
+
+        return np.array(images), np.array(labels)
+
+    def augment_image(self, img):
+        """Random image augmentations"""
+        if np.random.rand() > 0.5:
+            img = cv2.flip(img, 1)
+
+        angle = np.random.uniform(-15, 15)
+        h, w = img.shape[:2]
+        M = cv2.getRotationMatrix2D((w // 2, h // 2), angle, 1.0)
+        img = cv2.warpAffine(img, M, (w, h), borderMode=cv2.BORDER_REFLECT)
+
+        alpha = np.random.uniform(0.8, 1.2)
+        beta = np.random.uniform(-10, 10)
+        img = cv2.convertScaleAbs(img, alpha=alpha, beta=beta)
+
+        return img
+
+    def create_model(self, num_classes):
+        """Create MobileNetV2-based model"""
+        base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(IMG_SIZE, IMG_SIZE, 3))
+        base_model.trainable = False
+
+        x = base_model.output
+        x = GlobalAveragePooling2D()(x)
+        x = Dropout(0.3)(x)
+        output = Dense(num_classes, activation='softmax')(x)
+
+        model = Model(inputs=base_model.input, outputs=output)
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+                      loss='sparse_categorical_crossentropy',
+                      metrics=['accuracy'])
+        return model
+
+    def train(self, epochs=20, batch_size=32):
+        """Train and save model"""
+        print(f"\n[{datetime.now()}] 🚀 Starting training...")
+
+        X, y = self.load_training_data()
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+
+        self.model = self.create_model(len(self.label_map))
+
+        callbacks = [
+            EarlyStopping(patience=5, restore_best_weights=True),
+            ModelCheckpoint(MODEL_PATH, monitor='val_accuracy', mode='max', save_best_only=True)
+        ]
+
+        print(f"🧠 Training on {len(X_train)} samples | Validating on {len(X_val)} samples | Classes: {len(self.label_map)}")
+
+        self.history = self.model.fit(
+            X_train, y_train,
+            validation_data=(X_val, y_val),
+            epochs=epochs,
+            batch_size=batch_size,
+            callbacks=callbacks,
+            verbose=1
+        )
+
+        # Save model and label map
+        np.save(LABEL_MAP_PATH, self.label_map)
+        self.model.save(MODEL_PATH)
+
+        print(f"✅ Training complete. Model saved to {MODEL_PATH}")
+        print(f"📁 Label map saved to {LABEL_MAP_PATH}")
+        return self.model
+
+    def plot_training_history(self):
+        """Plot accuracy and loss"""
+        if self.history is None:
+            print("No training history found.")
+            return
+
+        plt.figure(figsize=(12, 5))
+
+        plt.subplot(1, 2, 1)
+        plt.plot(self.history.history['accuracy'], label='Train')
+        plt.plot(self.history.history['val_accuracy'], label='Validation')
+        plt.title('Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.legend()
+
+        plt.subplot(1, 2, 2)
+        plt.plot(self.history.history['loss'], label='Train')
+        plt.plot(self.history.history['val_loss'], label='Validation')
+        plt.title('Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+
+def train_model():
+    """Main function to trigger training"""
+    try:
+        trainer = FaceTrainer()
+        model = trainer.train(epochs=15, batch_size=16)
+        trainer.plot_training_history()
+        return model
+    except Exception as e:
+        print(f"❌ Error during training: {e}")
+        raise
+-----------------
+this capture_faces.py
+import os
+import threading
+from tkinter import messagebox
+
+import customtkinter as ctk
+import cv2
+import mysql.connector
+from PIL import Image, ImageTk
+from mysql.connector import Error
+
+from config import DATASET_PATH, IMG_SIZE, DB_CONFIG, FACE_CONFIG, UI_CONFIG
+
+
+class CaptureFaces:
+    def __init__(self, parent):
+        self.parent = parent
+        self.is_capturing = False
+        self.is_detecting = False
+        self.images_captured = 0
+        self.cap = None
+        self.model = None
+        self.label_map = None
+        self.current_student = None
+        self.db_connection = None
+
+        # Initialize face detection
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+        )
+
+        # Initialize database connection
+        self.init_db_connection()
+
+        # Setup UI
+        self.create_ui()
+
+    def init_db_connection(self):
+        """Initialize database connection with retry logic"""
+        try:
+            self.db_connection = mysql.connector.connect(**DB_CONFIG)
+            if not self.db_connection.is_connected():
+                raise Error("Connection failed")
+        except Error as e:
+            messagebox.showerror("Database Error", f"Connection failed: {str(e)}")
+            self.db_connection = None
+
+    def create_ui(self):
+        """Create the user interface"""
+        self.main_frame = ctk.CTkFrame(self.parent)
+        self.main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title
+        title = ctk.CTkLabel(
+            self.main_frame,
+            text=UI_CONFIG['window_title'],
+            font=("Arial", 20, "bold")
+        )
+        title.pack(pady=10)
+
+        # Input fields frame
+        input_frame = ctk.CTkFrame(self.main_frame)
+        input_frame.pack(fill="x", padx=20, pady=10)
+
+        # Student ID input
+        ctk.CTkLabel(input_frame, text="Student ID:").grid(
+            row=0, column=0, padx=5, pady=5, sticky="e"
+        )
+        self.id_entry = ctk.CTkEntry(input_frame)
+        self.id_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        # Student Name input
+        ctk.CTkLabel(input_frame, text="Student Name:").grid(
+            row=1, column=0, padx=5, pady=5, sticky="e"
+        )
+        self.name_entry = ctk.CTkEntry(input_frame)
+        self.name_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        # Camera selection
+        camera_frame = ctk.CTkFrame(self.main_frame)
+        camera_frame.pack(pady=5)
+        ctk.CTkLabel(camera_frame, text="Select Camera:").pack(side="left", padx=5)
+
+        self.camera_index_var = ctk.StringVar(value=str(FACE_CONFIG['camera_index']))
+        self.camera_dropdown = ctk.CTkComboBox(
+            camera_frame,
+            variable=self.camera_index_var,
+            values=[str(i) for i in range(5)]
+        )
+        self.camera_dropdown.pack(side="left", padx=5)
+
+        # Preview frame
+        self.preview_frame = ctk.CTkFrame(
+            self.main_frame,
+            width=UI_CONFIG['preview_size'][0],
+            height=UI_CONFIG['preview_size'][1]
+        )
+        self.preview_frame.pack(pady=10)
+        self.preview_label = ctk.CTkLabel(
+            self.preview_frame,
+            text="Camera feed will appear here"
+        )
+        self.preview_label.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Progress indicators
+        self.progress_bar = ctk.CTkProgressBar(self.main_frame, width=400)
+        self.progress_bar.pack(pady=5)
+        self.progress_bar.set(0)
+        self.progress_label = ctk.CTkLabel(self.main_frame, text="Ready")
+        self.progress_label.pack()
+
+        # Action buttons
+        button_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        button_frame.pack(pady=10)
+
+        self.capture_btn = ctk.CTkButton(
+            button_frame,
+            text="Start Capture",
+            command=self.start_capture,
+            fg_color=UI_CONFIG['button_colors']['capture'][0],
+            hover_color=UI_CONFIG['button_colors']['capture'][1]
+        )
+        self.capture_btn.pack(side="left", padx=10)
+
+        self.train_btn = ctk.CTkButton(
+            button_frame,
+            text="Train Model",
+            command=self.start_training,
+            fg_color=UI_CONFIG['button_colors']['train'][0],
+            hover_color=UI_CONFIG['button_colors']['train'][1],
+            state="normal"
+        )
+        self.train_btn.pack(side="left", padx=10)
+
+        self.stop_btn = ctk.CTkButton(
+            button_frame,
+            text="Stop",
+            command=self.stop_process,
+            fg_color=UI_CONFIG['button_colors']['stop'][0],
+            hover_color=UI_CONFIG['button_colors']['stop'][1],
+            state="disabled"
+        )
+        self.stop_btn.pack(side="left", padx=10)
+
+    def validate_student(self, student_id):
+        """Validate student ID and fetch name from database"""
+        if not student_id:
+            messagebox.showwarning("Input Error", "Please enter a Student ID")
+            return None
+
+        if not self.db_connection:
+            messagebox.showerror("Database Error", "No database connection.")
+            return None
+
+        try:
+            cursor = self.db_connection.cursor()
+            cursor.execute("SELECT name FROM students WHERE id = %s", (student_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                messagebox.showwarning("Student Not Found", "Student not found in database")
+                return None
+
+            return result[0]
+        except Error as e:
+            messagebox.showerror("Database Error", f"Query failed: {str(e)}")
+            return None
+
+    def start_capture(self):
+        """Start the face capture process"""
+        student_id = self.id_entry.get()
+        student_name = self.validate_student(student_id)
+
+        if not student_name:
+            return
+
+        self.current_student = {
+            'id': student_id,
+            'name': student_name
+        }
+
+        # Update UI with student name
+        self.name_entry.delete(0, "end")
+        self.name_entry.insert(0, student_name)
+
+        # Create dataset directory
+        self.dataset_dir = os.path.join(
+            DATASET_PATH,
+            f"{student_id}_{student_name}"
+        )
+        os.makedirs(self.dataset_dir, exist_ok=True)
+
+        # Initialize camera
+        camera_index = int(self.camera_index_var.get())
+        self.cap = cv2.VideoCapture(camera_index)
+
+        if not self.cap.isOpened():
+            messagebox.showerror("Camera Error", "Could not open camera")
+            return
+
+        # Start capture process
+        self.is_capturing = True
+        self.images_captured = 0
+        self.update_ui_for_capture()
+        self.update_capture()
+
+    def update_capture(self):
+        """Continuously capture frames and detect faces"""
+        if not self.is_capturing:
+            return
+
+        ret, frame = self.cap.read()
+        if not ret:
+            messagebox.showerror("Camera Error", "Failed to read frame")
+            self.stop_capture()
+            return
+
+        # Process frame
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+
+        # Handle detected faces
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame_rgb, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+            if self.images_captured < FACE_CONFIG['total_images']:
+                self.save_face_image(gray, x, y, w, h)
+                self.update_progress()
+
+        # Update preview
+        self.update_preview(frame_rgb)
+
+        # Check if capture is complete
+        if self.images_captured >= FACE_CONFIG['total_images']:
+            self.complete_capture()
+            return
+
+        # Continue capture
+        self.parent.after(30, self.update_capture)
+
+    def save_face_image(self, frame, x, y, w, h):
+        """Save detected face image to dataset"""
+        face_img = frame[y:y + h, x:x + w]
+        face_img = cv2.resize(face_img, (IMG_SIZE, IMG_SIZE))
+        img_path = os.path.join(
+            self.dataset_dir,
+            f"{self.images_captured}.jpg"
+        )
+        cv2.imwrite(img_path, face_img)
+        self.images_captured += 1
+
+    def update_progress(self):
+        """Update progress bar and label"""
+        progress = self.images_captured / FACE_CONFIG['total_images']
+        self.progress_bar.set(progress)
+        self.progress_label.configure(
+            text=f"Captured {self.images_captured}/{FACE_CONFIG['total_images']} images"
+        )
+
+    def update_preview(self, frame):
+        """Update the camera preview"""
+        img = Image.fromarray(frame)
+        img = img.resize(UI_CONFIG['preview_size'])
+        img_tk = ImageTk.PhotoImage(img)
+        self.preview_label.configure(image=img_tk, text="")
+        self.preview_label.image = img_tk
+
+    def complete_capture(self):
+        """Handle completion of capture process"""
+        self.stop_capture()
+        messagebox.showinfo(
+            "Complete",
+            f"Captured {self.images_captured} images of {self.current_student['name']}"
+        )
+
+        # Optionally start training automatically
+        if messagebox.askyesno(
+                "Training",
+                "Would you like to train the model now?"
+        ):
+            self.start_training()
+
+    def stop_capture(self):
+        """Stop the capture process"""
+        self.is_capturing = False
+        if self.cap:
+            self.cap.release()
+        self.update_ui_after_capture()
+
+    def update_ui_for_capture(self):
+        """Update UI when capture starts"""
+        self.capture_btn.configure(state="disabled")
+        self.train_btn.configure(state="disabled")
+        self.stop_btn.configure(state="normal")
+        self.progress_label.configure(text="Capturing images...")
+        self.progress_bar.set(0)
+
+    def update_ui_after_capture(self):
+        """Update UI when capture stops"""
+        self.capture_btn.configure(state="normal")
+        self.train_btn.configure(state="normal")
+        self.stop_btn.configure(state="disabled")
+        self.progress_label.configure(text="Ready")
+
+    def stop_process(self):
+        """Stop any ongoing process"""
+        if self.is_capturing:
+            self.stop_capture()
+        if self.cap and self.cap.isOpened():
+            self.cap.release()
+
+    def start_training(self):
+        """Start the model training process"""
+        if not self.validate_training_prerequisites():
+            return
+
+        # Disable UI during training
+        self.capture_btn.configure(state="disabled")
+        self.train_btn.configure(state="disabled")
+        self.stop_btn.configure(state="disabled")
+        self.progress_label.configure(text="Training model...")
+        self.progress_bar.set(0)
+
+        # Start training in separate thread
+        threading.Thread(target=self.train_model, daemon=True).start()
+
+    def validate_training_prerequisites(self):
+        """Check if training can proceed"""
+        if not os.path.exists(DATASET_PATH):
+            messagebox.showerror(
+                "Error",
+                f"Dataset directory not found at {DATASET_PATH}"
+            )
+            return False
+
+        if len(os.listdir(DATASET_PATH)) < 1:
+            messagebox.showerror(
+                "Error",
+                "No student data found in dataset directory"
+            )
+            return False
+
+        return True
+
+    def train_model(self):
+        """Train the face recognition model"""
+        try:
+            from train import train_model
+            train_model()
+
+            # Update UI on success
+            self.parent.after(0, lambda: messagebox.showinfo(
+                "Success",
+                "Model trained successfully!"
+            ))
+        except Exception as e:
+            # Show error message
+            self.parent.after(0, lambda: messagebox.showerror(
+                "Error",
+                f"Training failed: {str(e)}"
+            ))
+        finally:
+            # Restore UI
+            self.parent.after(0, self.update_ui_after_training)
+
+    def update_ui_after_training(self):
+        """Restore UI after training completes"""
+        self.capture_btn.configure(state="normal")
+        self.train_btn.configure(state="normal")
+        self.stop_btn.configure(state="disabled")
+        self.progress_label.configure(text="Training completed")
+        self.progress_bar.set(1)
+
+    def __del__(self):
+        """Cleanup resources"""
+        if self.cap and self.cap.isOpened():
+            self.cap.release()
+        if self.db_connection and self.db_connection.is_connected():
+            self.db_connection.close()
+
+
+def show_capture(parent):
+    """Entry point to show the capture interface"""
+    CaptureFaces(parent)
+------------------
+this is face_recognition.py
+import os
+import cv2
+import numpy as np
+import tensorflow as tf
+import mysql.connector
+from mysql.connector import Error
+import customtkinter as ctk
+from PIL import Image, ImageTk
+import threading
+from datetime import datetime, timedelta
+from time import time
+from config import DATASET_PATH, IMG_SIZE, MODEL_PATH, LABEL_MAP_PATH, DB_CONFIG, FACE_CONFIG, UI_CONFIG
+
+
+class FaceRecognition:
+    def __init__(self, root):
+        self.root = root
+        self.cap = None
+        self.model = None
+        self.label_map = None
+        self.reverse_label_map = None
+        self.is_running = False
+        self.current_image = None
+        self.recognition_start_time = None
+        self.last_recognitions = {}  # Track last recognition time for each student
+        self.recognition_durations = {}  # Track total duration for each student
+
+        # Initialize UI
+        self.setup_ui()
+
+        # Initialize database connection
+        self.db_connection = self.init_db_connection()
+
+        # Load face detection model
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+        )
+
+    def init_db_connection(self):
+        """Initialize database connection with error handling"""
+        try:
+            return mysql.connector.connect(**DB_CONFIG)
+        except Error as e:
+            print(f"Database connection failed: {e}")
+            return None
+
+    def setup_ui(self):
+        """Setup the user interface with enhanced design"""
+        # Main container
+        self.main_frame = ctk.CTkFrame(self.root, corner_radius=10)
+        self.main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title frame
+        title_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        title_frame.pack(pady=(10, 20), fill="x")
+
+        # Title label
+        title_label = ctk.CTkLabel(
+            title_frame,
+            text="FACE RECOGNITION SYSTEM",
+            font=("Arial", 20, "bold"),
+            text_color="#4CC9F0"
+        )
+        title_label.pack()
+
+        # Content frame (two columns)
+        content_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        content_frame.pack(fill="both", expand=True)
+
+        # Left column - Camera preview
+        left_frame = ctk.CTkFrame(content_frame, width=600, height=480)
+        left_frame.pack_propagate(False)
+        left_frame.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+        camera_label = ctk.CTkLabel(
+            left_frame,
+            text="CAMERA FEED",
+            font=("Arial", 12, "bold"),
+            text_color="#F72585"
+        )
+        camera_label.pack(pady=(5, 10))
+
+        self.preview_label = ctk.CTkLabel(left_frame, text="", width=600, height=450)
+        self.preview_label.pack()
+
+        # Right column - Info and controls
+        right_frame = ctk.CTkFrame(content_frame, width=300)
+        right_frame.pack_propagate(False)
+        right_frame.pack(side="right", fill="both", expand=True)
+
+        # Recognition info frame
+        info_frame = ctk.CTkFrame(right_frame, corner_radius=8)
+        info_frame.pack(fill="x", pady=(0, 15))
+
+        info_label = ctk.CTkLabel(
+            info_frame,
+            text="RECOGNITION INFO",
+            font=("Arial", 12, "bold"),
+            text_color="#F72585"
+        )
+        info_label.pack(pady=(5, 10))
+
+        # Current status
+        self.status_label = ctk.CTkLabel(
+            info_frame,
+            text="Status: Ready",
+            font=("Arial", 11),
+            anchor="w",
+            justify="left"
+        )
+        self.status_label.pack(fill="x", padx=10, pady=5)
+
+        # Duration display
+        self.duration_label = ctk.CTkLabel(
+            info_frame,
+            text="Session Duration: 00:00:00",
+            font=("Arial", 11),
+            anchor="w",
+            justify="left"
+        )
+        self.duration_label.pack(fill="x", padx=10, pady=5)
+
+        # Recognized students frame
+        self.students_frame = ctk.CTkScrollableFrame(
+            right_frame,
+            height=200,
+            label_text="RECOGNIZED STUDENTS",
+            label_font=("Arial", 12, "bold"),
+            label_text_color="#F72585"
+        )
+        self.students_frame.pack(fill="both", expand=True, pady=(0, 15))
+
+        # Controls frame
+        controls_frame = ctk.CTkFrame(right_frame, corner_radius=8)
+        controls_frame.pack(fill="x", pady=(0, 10))
+
+        controls_label = ctk.CTkLabel(
+            controls_frame,
+            text="CONTROLS",
+            font=("Arial", 12, "bold"),
+            text_color="#F72585"
+        )
+        controls_label.pack(pady=(5, 10))
+
+        # Start/Stop buttons
+        btn_frame = ctk.CTkFrame(controls_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=10, pady=5)
+
+        self.start_btn = ctk.CTkButton(
+            btn_frame,
+            text="Start Recognition",
+            command=self.start_recognition,
+            fg_color="#4CC9F0",
+            hover_color="#4895EF",
+            font=("Arial", 12, "bold")
+        )
+        self.start_btn.pack(side="left", fill="x", expand=True, padx=5)
+
+        self.stop_btn = ctk.CTkButton(
+            btn_frame,
+            text="Stop",
+            command=self.stop_recognition,
+            state="disabled",
+            fg_color="#F72585",
+            hover_color="#B5179E",
+            font=("Arial", 12, "bold")
+        )
+        self.stop_btn.pack(side="left", fill="x", expand=True, padx=5)
+
+        # Session statistics
+        stats_frame = ctk.CTkFrame(right_frame, corner_radius=8)
+        stats_frame.pack(fill="x")
+
+        stats_label = ctk.CTkLabel(
+            stats_frame,
+            text="SESSION STATISTICS",
+            font=("Arial", 12, "bold"),
+            text_color="#F72585"
+        )
+        stats_label.pack(pady=(5, 10))
+
+        self.stats_labels = {
+            'total': self.create_stat_label(stats_frame, "Total Recognitions:", "0"),
+            'unique': self.create_stat_label(stats_frame, "Unique Students:", "0"),
+            'current': self.create_stat_label(stats_frame, "Currently Present:", "0")
+        }
+
+    def create_stat_label(self, parent, text, value):
+        """Helper to create consistent stat labels"""
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        frame.pack(fill="x", padx=10, pady=2)
+
+        label = ctk.CTkLabel(
+            frame,
+            text=text,
+            font=("Arial", 11),
+            anchor="w",
+            width=120
+        )
+        label.pack(side="left")
+
+        value_label = ctk.CTkLabel(
+            frame,
+            text=value,
+            font=("Arial", 11, "bold"),
+            anchor="e"
+        )
+        value_label.pack(side="right", fill="x", expand=True)
+
+        return value_label
+
+    def load_model(self):
+        """Load the face recognition model"""
+        if not os.path.exists(MODEL_PATH) or not os.path.exists(LABEL_MAP_PATH):
+            self.status_label.configure(text="Status: Model not found. Please train first.")
+            return False
+
+        try:
+            self.model = tf.keras.models.load_model(MODEL_PATH)
+            self.label_map = np.load(LABEL_MAP_PATH, allow_pickle=True).item()
+            self.reverse_label_map = {v: k for k, v in self.label_map.items()}
+            return True
+        except Exception as e:
+            self.status_label.configure(text=f"Status: Error loading model: {str(e)}")
+            return False
+
+    def start_recognition(self):
+        """Start the face recognition process"""
+        if not self.load_model():
+            return
+
+        self.cap = cv2.VideoCapture(FACE_CONFIG['camera_index'])
+        if not self.cap.isOpened():
+            self.status_label.configure(text="Status: Error: Could not open camera")
+            return
+
+        self.is_running = True
+        self.recognition_start_time = time()
+        self.last_recognitions = {}
+        self.recognition_durations = {}
+        self.start_btn.configure(state="disabled")
+        self.stop_btn.configure(state="normal")
+        self.status_label.configure(text="Status: Recognition active...")
+
+        # Clear previous student list
+        for widget in self.students_frame.winfo_children():
+            widget.destroy()
+
+        # Start duration timer
+        self.update_duration()
+        self.update_frame()
+
+    def update_duration(self):
+        """Update the duration display"""
+        if not self.is_running:
+            return
+
+        elapsed = time() - self.recognition_start_time
+        duration_str = str(timedelta(seconds=int(elapsed)))
+        self.duration_label.configure(text=f"Session Duration: {duration_str}")
+
+        # Update statistics
+        unique_students = len(self.recognition_durations)
+        total_recognitions = sum(len(times) for times in self.last_recognitions.values())
+        current_students = sum(1 for student in self.last_recognitions
+                               if time() - self.last_recognitions[student][
+                                   -1] < 5)  # Considered present if recognized in last 5 seconds
+
+        self.stats_labels['total'].configure(text=str(total_recognitions))
+        self.stats_labels['unique'].configure(text=str(unique_students))
+        self.stats_labels['current'].configure(text=str(current_students))
+
+        self.root.after(1000, self.update_duration)
+
+    def update_frame(self):
+        """Process each video frame"""
+        if not self.is_running:
+            return
+
+        ret, frame = self.cap.read()
+        if ret:
+            # Face detection
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+
+            current_time = time()
+            current_students = set()
+
+            for (x, y, w, h) in faces:
+                try:
+                    # Face recognition
+                    face_img = frame[y:y + h, x:x + w]
+                    face_img = cv2.resize(face_img, (IMG_SIZE, IMG_SIZE))
+                    face_img = face_img / 255.0
+                    face_img = np.expand_dims(face_img, axis=0)
+
+                    predictions = self.model.predict(face_img)
+                    predicted_id = np.argmax(predictions)
+                    confidence = np.max(predictions)
+                    student_id = self.reverse_label_map.get(predicted_id, "Unknown")
+
+                    # Only consider high-confidence recognitions
+                    if confidence > 0.8 and student_id != "Unknown":
+                        current_students.add(student_id)
+
+                        # Track recognition time
+                        if student_id not in self.last_recognitions:
+                            self.last_recognitions[student_id] = []
+                            self.recognition_durations[student_id] = 0.0
+
+                        self.last_recognitions[student_id].append(current_time)
+
+                        # Update duration if this is a continuation
+                        if len(self.last_recognitions[student_id]) > 1:
+                            time_diff = current_time - self.last_recognitions[student_id][-2]
+                            if time_diff < 2:  # Considered continuous if less than 2 seconds apart
+                                self.recognition_durations[student_id] += time_diff
+
+                        # Log recognition to database if not recently logged
+                        if (student_id not in self.last_recognitions or
+                                len(self.last_recognitions[student_id]) == 1 or
+                                current_time - self.last_recognitions[student_id][-2] > 10):
+                            if self.db_connection:
+                                self.log_recognition(student_id)
+
+                        # Draw rectangle and label with confidence
+                        color = (0, 255, 0)
+                        cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+                        label = f"{student_id} ({confidence:.2f})"
+                        cv2.putText(frame, label, (x, y - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+
+                        # Update student list
+                        self.update_student_list(student_id)
+
+                except Exception as e:
+                    print(f"Error processing face: {e}")
+
+            # Update display
+            img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(img)
+            img = ctk.CTkImage(light_image=img, size=(600, 450))
+            self.preview_label.configure(image=img)
+            self.preview_label.image = img
+
+        self.root.after(30, self.update_frame)
+
+    def update_student_list(self, student_id):
+        """Update the list of recognized students"""
+        # Check if student already in list
+        for widget in self.students_frame.winfo_children():
+            if hasattr(widget, 'student_id') and widget.student_id == student_id:
+                # Update duration display
+                duration = self.recognition_durations[student_id]
+                duration_str = str(timedelta(seconds=int(duration)))
+                widget.duration_label.configure(text=duration_str)
+                return
+
+        # Add new student to list
+        student_frame = ctk.CTkFrame(self.students_frame, corner_radius=5)
+        student_frame.pack(fill="x", pady=2, padx=5)
+        student_frame.student_id = student_id
+
+        # Student ID label
+        id_label = ctk.CTkLabel(
+            student_frame,
+            text=student_id,
+            font=("Arial", 11, "bold"),
+            anchor="w",
+            width=150
+        )
+        id_label.pack(side="left", padx=5)
+
+        # Duration label
+        duration_label = ctk.CTkLabel(
+            student_frame,
+            text="00:00:00",
+            font=("Arial", 11),
+            anchor="e"
+        )
+        duration_label.pack(side="right", padx=5)
+        student_frame.duration_label = duration_label
+
+    def log_recognition(self, student_id):
+        """Log recognition to database"""
+        try:
+            cursor = self.db_connection.cursor()
+            query = "INSERT INTO recognition_logs (student_id, recognition_time) VALUES (%s, %s)"
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute(query, (student_id, current_time))
+            self.db_connection.commit()
+            cursor.close()
+        except Error as e:
+            print(f"Database error: {e}")
+
+    def stop_recognition(self):
+        """Stop the recognition process"""
+        self.is_running = False
+        if self.cap:
+            self.cap.release()
+        self.start_btn.configure(state="normal")
+        self.stop_btn.configure(state="disabled")
+        self.status_label.configure(text="Status: Ready")
+
+        # Final duration update
+        if self.recognition_start_time:
+            elapsed = time() - self.recognition_start_time
+            duration_str = str(timedelta(seconds=int(elapsed)))
+            self.duration_label.configure(text=f"Session Duration: {duration_str} (Final)")
+
+    def on_closing(self):
+        """Cleanup when closing the application"""
+        self.stop_recognition()
+        if self.db_connection and self.db_connection.is_connected():
+            self.db_connection.close()
+        self.root.destroy()
+------------------
+this is database.py
+# database.py
+import mysql.connector
+from mysql.connector import Error
+from tkinter import messagebox
+from datetime import datetime
+import hashlib
+from typing import List, Dict, Optional
+
+
+class DatabaseConnection:
+    """Handles all database connection operations"""
+
+    def __init__(self, host="localhost", user="root", password="", database="student_management"):
+        self.host = host
+        self.user = user
+        self.password = password
+        self.database = database
+        self.connection = None
+
+    @staticmethod
+    def _hash_password(password):
+        """Hash password using SHA-256"""
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    def connect(self):
+        """Establish database connection with error handling"""
+        try:
+            self.connection = mysql.connector.connect(
+                host=self.host,
+                user=self.user,
+                password=self.password,
+                database=self.database
+            )
+            if self.connection.is_connected():
+                print("Connected to MySQL database")
+                return True
+            return False
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+            messagebox.showerror("Database Error", f"Failed to connect to database:\n{e}")
+            return False
+
+    def disconnect(self):
+        """Close database connection if it exists"""
+        if self.connection and self.connection.is_connected():
+            self.connection.close()
+            print("Database connection closed")
+
+    def get_connection(self):
+        """Get the active database connection"""
+        return self.connection if self.connection and self.connection.is_connected() else None
+
+    def is_connected(self):
+        """Check if database is currently connected"""
+        return self.connection and self.connection.is_connected()
+
+
+class AuthDB:
+    """Handles authentication-related database operations"""
+
+    def __init__(self, db_connection):
+        self.db = db_connection
+
+    def validate_user(self, username, password):
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor(dictionary=True)
+            query = "SELECT * FROM users WHERE username = %s"
+            cursor.execute(query, (username,))
+            user = cursor.fetchone()
+
+            if user and user['password'] == DatabaseConnection._hash_password(password):
+                return user
+            return False
+
+        except Error as e:
+            print(f"Error validating user: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def create_user(self, full_name, username, password, email, role="teacher"):
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor()
+
+            # Check if the username exists
+            cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+            if cursor.fetchone():
+                return "username_exists"
+
+            # Check if the email exists
+            cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+            if cursor.fetchone():
+                return "email_exists"
+
+            # Insert new user into the database
+            query = """
+                INSERT INTO users (full_name, username, password, email, role, created_at)
+                VALUES (%s, %s, %s, %s, %s, NOW())
+            """
+            cursor.execute(query, (
+                full_name,
+                username,
+                DatabaseConnection._hash_password(password),
+                email,
+                role
+            ))
+
+            self.db.connection.commit()
+            return True
+
+        except Error as e:
+            print(f"Error creating user: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def get_user_by_id(self, user_id):
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            return cursor.fetchone()
+        except Error as e:
+            print(f"Error getting user by ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+
+
+class TeacherDB:
+    """Handles teacher-related database operations"""
+
+    def __init__(self, db_connection):
+        self.db = db_connection
+
+    def add_teacher(self, teacher_id, cin, name, email, phone, subjects, photo=None):
+        """Create: Add a new teacher"""
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor()
+            query = """
+                INSERT INTO teachers (id, cin, name, email, phone, subjects, photo) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query, (teacher_id, cin, name, email, phone, subjects, photo))
+            self.db.connection.commit()
+            return True
+        except Error as e:
+            print(f"Error adding teacher: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def get_teachers(self, search_query=None):
+        """Read: Fetch all teachers, with optional search"""
+        if not self.db.is_connected():
+            return []
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor(dictionary=True)
+            query = "SELECT * FROM teachers"
+            params = []
+
+            if search_query:
+                query += " WHERE name LIKE %s OR id LIKE %s OR cin LIKE %s"
+                params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
+
+            cursor.execute(query, tuple(params))
+            return cursor.fetchall()
+        except Error as e:
+            print(f"Error fetching teachers: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+
+    def get_teacher_by_id(self, teacher_id):
+        """Read: Fetch a single teacher by ID"""
+        if not self.db.is_connected():
+            return None
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor(dictionary=True)
+            query = "SELECT * FROM teachers WHERE id = %s"
+            cursor.execute(query, (teacher_id,))
+            return cursor.fetchone()
+        except Error as e:
+            print(f"Error fetching teacher by ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+
+    def update_teacher(self, teacher_id, cin, name, email, phone, subjects, photo=None):
+        """Update: Modify an existing teacher's data"""
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor()
+            query = """
+                UPDATE teachers 
+                SET cin=%s, name=%s, email=%s, phone=%s, subjects=%s, photo=%s
+                WHERE id=%s
+            """
+            cursor.execute(query, (cin, name, email, phone, subjects, photo, teacher_id))
+            self.db.connection.commit()
+            return cursor.rowcount > 0
+        except Error as e:
+            print(f"Error updating teacher: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def remove_teacher(self, teacher_id):
+        """Delete: Remove a teacher by ID"""
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor()
+            query = "DELETE FROM teachers WHERE id = %s"
+            cursor.execute(query, (teacher_id,))
+            self.db.connection.commit()
+            return cursor.rowcount > 0
+        except Error as e:
+            print(f"Error deleting teacher: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+
+class StudentDB:
+    """Handles CRUD operations for students"""
+
+    def __init__(self, db_connection):
+        self.db = db_connection
+
+    def add_student(self, student_id, name, student_class, email, phone, teacher, photo):
+        try:
+            cursor = self.db.connection.cursor()
+            sql = """
+            INSERT INTO students (id, name, class, email, phone, teacher, photo)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (student_id, name, student_class, email, phone, teacher, photo))
+            self.db.connection.commit()
+            return True
+        except Exception as e:
+            print("Add student error:", e)
+            return False
+
+    def get_students(self, filter_teacher=None, search_query=None):
+        """Read all students, optionally filtered by teacher or search query"""
+        if not self.db.is_connected():
+            return []
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor(dictionary=True)
+            query = """
+                SELECT id, name, class, teacher, email, phone, status, photo
+                FROM students
+            """
+            params = []
+            conditions = []
+
+            if filter_teacher and filter_teacher != "All":
+                conditions.append("teacher = %s")
+                params.append(filter_teacher)
+
+            if search_query:
+                conditions.append("(name LIKE %s OR id LIKE %s)")
+                params.extend([f"%{search_query}%", f"%{search_query}%"])
+
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+
+            cursor.execute(query, tuple(params))
+            return cursor.fetchall()
+        except Error as e:
+            print(f"[READ] Error fetching students: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+
+    def get_student_by_id(self, student_id):
+        """Read a single student by ID"""
+        if not self.db.is_connected():
+            return None
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM students WHERE id = %s", (student_id,))
+            return cursor.fetchone()
+        except Error as e:
+            print(f"[READ] Error fetching student by ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+
+    def update_student(self, student_id, name=None, student_class=None, teacher=None,
+                       email=None, phone=None, status=None, photo=None):
+        """Update student details"""
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor()
+            fields = []
+            params = []
+
+            if name is not None:
+                fields.append("name = %s")
+                params.append(name)
+            if student_class is not None:
+                fields.append("class = %s")
+                params.append(student_class)
+            if teacher is not None:
+                fields.append("teacher = %s")
+                params.append(teacher)
+            if email is not None:
+                fields.append("email = %s")
+                params.append(email)
+            if phone is not None:
+                fields.append("phone = %s")
+                params.append(phone)
+            if status is not None:
+                fields.append("status = %s")
+                params.append(status)
+            if photo is not None:
+                fields.append("photo = %s")
+                params.append(photo)
+
+            if not fields:
+                print("[UPDATE] No fields to update.")
+                return False
+
+            query = f"UPDATE students SET {', '.join(fields)} WHERE id = %s"
+            params.append(student_id)
+
+            cursor.execute(query, tuple(params))
+            self.db.connection.commit()
+            return True
+        except Error as e:
+            print(f"[UPDATE] Error updating student: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def remove_student(self, student_id):
+        """Delete a student"""
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor()
+            cursor.execute("DELETE FROM students WHERE id = %s", (student_id,))
+            self.db.connection.commit()
+            return cursor.rowcount > 0
+        except Error as e:
+            print(f"[DELETE] Error removing student: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+
+class ClassDB:
+    """Handles class-related database operations"""
+
+    def __init__(self, db_connection):
+        self.db = db_connection
+
+    def create_class(self, class_id, class_name, teacher, subject=None, schedule=None):
+        """Create a new class"""
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor()
+            query = """
+                INSERT INTO classes (class_id, class_name, teacher, subject, schedule)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            cursor.execute(query, (class_id, class_name, teacher, subject, schedule))
+            self.db.connection.commit()
+            return True
+        except Error as e:
+            print(f"Error creating class: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def get_class_by_id(self, class_id):
+        """Get class by ID"""
+        if not self.db.is_connected():
+            return None
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM classes WHERE class_id = %s", (class_id,))
+            return cursor.fetchone()
+        except Error as e:
+            print(f"Error getting class: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+
+    def add_student_to_class(self, class_id, student_id):
+        """Add student to class"""
+        if not self.db.is_connected():
+            return False
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor()
+            query = "INSERT INTO class_students (class_id, student_id) VALUES (%s, %s)"
+            cursor.execute(query, (class_id, student_id))
+            self.db.connection.commit()
+            return True
+        except Error as e:
+            print(f"Error adding student to class: {e}")
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def get_students_in_class(self, class_id):
+        """Get all students in a class"""
+        if not self.db.is_connected():
+            return []
+
+        cursor = None
+        try:
+            cursor = self.db.connection.cursor(dictionary=True)
+            query = """
+                SELECT s.id, s.name, s.class, s.email, s.phone 
+                FROM students s
+                JOIN class_students cs ON s.id = cs.student_id
+                WHERE cs.class_id = %s
+            """
+            cursor.execute(query, (class_id,))
+            return cursor.fetchall()
+        except Error as e:
+            print(f"Error getting students in class: {e}")
+            return []
+        finally:
+            if cursor:
+                cursor.close()
+-------------------
+this is config.py
+# config.py
+
+# Database configuration
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': '',
+    'database': 'student_management'
+}
+
+# Face detection configuration
+FACE_CONFIG = {
+    'dataset_path': 'dataset',
+    'img_size': 160,
+    'model_path': 'face_model.h5',
+    'label_map_path': 'label_map.npy',
+    'total_images': 30,
+    'min_confidence': 0.85,
+    'camera_index': 0
+}
+
+# UI configuration
+UI_CONFIG = {
+    'window_title': "Face Recognition System",
+    'preview_size': (480, 360),
+    'button_colors': {
+        'capture': ("#4CAF50", "#45A049"),
+        'train': ("#2196F3", "#1976D2"),
+        'detect': ("#9C27B0", "#7B1FA2"),
+        'stop': ("#f44336", "#d32f2f"),
+        'red': "#e74c3c"
+    }
+}
+
+# Individual variable access (optional)
+DATASET_PATH = FACE_CONFIG['dataset_path']
+IMG_SIZE = FACE_CONFIG['img_size']
+MODEL_PATH = FACE_CONFIG['model_path']
+LABEL_MAP_PATH = FACE_CONFIG['label_map_path']
+CAMERA_INDEX = FACE_CONFIG['camera_index']
+-------------
+this is setting.py
+import customtkinter as ctk
+
+
+class SettingsPage(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.title_label = ctk.CTkLabel(self, text="Settings", font=("Arial", 24, "bold"))
+        self.title_label.pack(pady=20)
+
+        # Dark Mode Switch (Single Switch to Toggle Dark Mode)
+        self.dark_mode_switch = ctk.CTkSwitch(self, text="Enable Dark Mode", font=("Arial", 14),
+                                              command=self.toggle_theme)
+        self.dark_mode_switch.pack(pady=10)
+
+        # Example setting widgets
+        setting_1 = ctk.CTkLabel(self, text="Setting 1: Enable Feature", font=("Arial", 14))
+        setting_1.pack(pady=10)
+
+        # Example checkbox for additional settings
+        enable_feature = ctk.CTkCheckBox(self, text="Enable Feature", font=("Arial", 14))
+        enable_feature.pack(pady=10)
+
+    def toggle_theme(self):
+        """ Toggle between dark and light mode """
+        if self.dark_mode_switch.get():
+            ctk.set_appearance_mode("dark")
+            print("Dark Mode enabled")
+        else:
+            ctk.set_appearance_mode("light")
+            print("Light Mode enabled")
+--------
+this classe.py
+import os
+import customtkinter as ctk
+from tkinter import messagebox
+from database import ClassDB  # Assuming you have a ClassDB similar to StudentDB
+
+class ClassInformation(ctk.CTkFrame):
+    def __init__(self, parent, db_connection):
+        super().__init__(parent, fg_color="#f5f7fa")
+        self.parent = parent
+        self.db_connection = db_connection
+        self.db = ClassDB(self.db_connection)
+
+        # UI Configuration
+        self.font_title = ("Arial", 24, "bold")
+        self.font_subtitle = ("Arial", 14)
+        self.font_normal = ("Arial", 12)
+        self.primary_color = "#3498db"
+        self.secondary_color = "#2c3e50"
+        self.success_color = "#2ecc71"
+        self.warning_color = "#f39c12"
+        self.danger_color = "#e74c3c"
+
+        # Create UI
+        self.create_ui()
+
+    def create_ui(self):
+        """Creates the class management UI"""
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title
+        ctk.CTkLabel(
+            main_container,
+            text="🏫 Class Management System",
+            font=self.font_title,
+            text_color=self.secondary_color
+        ).pack(pady=(0, 20))
+
+        # Content frame
+        content_frame = ctk.CTkFrame(main_container, corner_radius=15)
+        content_frame.pack(fill="both", expand=True)
+
+        # Form section
+        form_frame = ctk.CTkFrame(content_frame, width=400, corner_radius=10)
+        form_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+
+        # Students list section
+        students_frame = ctk.CTkFrame(content_frame, width=300, corner_radius=10)
+        students_frame.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+
+        # Configure grid weights
+        content_frame.grid_columnconfigure(0, weight=1)
+        content_frame.grid_columnconfigure(1, weight=1)
+        content_frame.grid_rowconfigure(0, weight=1)
+
+        # Form fields
+        self.create_form_fields(form_frame)
+        self.create_students_section(students_frame)
+
+        # Action buttons
+        self.create_action_buttons(form_frame)
+
+    def create_form_fields(self, parent):
+        """Creates the form input fields"""
+        fields = [
+            ("Class ID:", "var_class_id", True),
+            ("Class Name:", "var_class_name", True),
+            ("Teacher:", "var_teacher", True),
+            ("Subject:", "var_subject", False),
+            ("Schedule:", "var_schedule", False),
+        ]
+
+        for idx, (label_text, var_name, required) in enumerate(fields):
+            setattr(self, var_name, ctk.StringVar())
+
+            label = ctk.CTkLabel(
+                parent,
+                text=label_text,
+                font=self.font_normal,
+                text_color=self.secondary_color
+            )
+            label.grid(row=idx, column=0, sticky="w", padx=10, pady=5)
+
+            entry = ctk.CTkEntry(
+                parent,
+                textvariable=getattr(self, var_name),
+                font=self.font_normal,
+                width=250,
+                border_color=self.primary_color,
+                corner_radius=8
+            )
+            entry.grid(row=idx, column=1, padx=10, pady=5)
+
+            if required:
+                ctk.CTkLabel(
+                    parent,
+                    text="*",
+                    text_color=self.danger_color,
+                    font=("Arial", 14, "bold")
+                ).grid(row=idx, column=2, sticky="w", padx=(0, 10))
+
+        # Student ID field for adding students to class
+        self.var_student_id = ctk.StringVar()
+        ctk.CTkLabel(
+            parent,
+            text="Student ID to Add:",
+            font=self.font_normal,
+            text_color=self.secondary_color
+        ).grid(row=len(fields), column=0, sticky="w", padx=10, pady=5)
+
+        ctk.CTkEntry(
+            parent,
+            textvariable=self.var_student_id,
+            font=self.font_normal,
+            width=250,
+            border_color=self.primary_color,
+            corner_radius=8
+        ).grid(row=len(fields), column=1, padx=10, pady=5)
+
+    def create_students_section(self, parent):
+        """Creates the students list section"""
+        self.students_listbox = ctk.CTkScrollableFrame(
+            parent,
+            width=280,
+            height=300,
+            corner_radius=10,
+            fg_color="#ecf0f1"
+        )
+        self.students_listbox.pack(pady=(20, 10), fill="both", expand=True)
+
+        # Search and add student buttons
+        button_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        button_frame.pack(fill="x", pady=10)
+
+        ctk.CTkButton(
+            button_frame,
+            text="🔍 Search Class",
+            font=self.font_normal,
+            fg_color=self.secondary_color,
+            hover_color="#34495e",
+            command=self.search_class,
+            width=140,
+            height=40,
+            corner_radius=8
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            button_frame,
+            text="➕ Add Student",
+            font=self.font_normal,
+            fg_color=self.primary_color,
+            hover_color="#2980b9",
+            command=self.add_student_to_class,
+            width=140,
+            height=40,
+            corner_radius=8
+        ).pack(side="left", padx=5)
+
+    def create_action_buttons(self, parent):
+        """Creates the action buttons"""
+        buttons_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        buttons_frame.grid(row=6, column=0, columnspan=3, pady=20)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="➕ Create Class",
+            font=self.font_normal,
+            fg_color=self.success_color,
+            hover_color="#27ae60",
+            command=self.create_class,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="🔄 Update",
+            font=self.font_normal,
+            fg_color=self.warning_color,
+            hover_color="#e67e22",
+            command=self.update_class,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="🗑️ Remove",
+            font=self.font_normal,
+            fg_color=self.danger_color,
+            hover_color="#c0392b",
+            command=self.remove_class,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            buttons_frame,
+            text="🧹 Clear",
+            font=self.font_normal,
+            fg_color="#95a5a6",
+            hover_color="#7f8c8d",
+            command=self.clear_fields,
+            width=120,
+            height=40
+        ).pack(side="left", padx=5)
+
+    def create_class(self):
+        """Creates a new class"""
+        if not self.validate_fields():
+            return
+
+        class_data = (
+            self.var_class_id.get(),
+            self.var_class_name.get(),
+            self.var_teacher.get(),
+            self.var_subject.get(),
+            self.var_schedule.get()
+        )
+
+        try:
+            success = self.db.create_class(class_data)
+            if success:
+                messagebox.showinfo("Success", "Class created successfully!")
+                self.clear_fields()
+            else:
+                messagebox.showerror("Error", "Failed to create class")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def update_class(self):
+        """Updates an existing class"""
+        if not self.validate_fields():
+            return
+
+        class_data = (
+            self.var_class_name.get(),
+            self.var_teacher.get(),
+            self.var_subject.get(),
+            self.var_schedule.get(),
+            self.var_class_id.get()
+        )
+
+        try:
+            success = self.db.update_class(class_data)
+            if success:
+                messagebox.showinfo("Success", "Class updated successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to update class")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def remove_class(self):
+        """Removes a class"""
+        class_id = self.var_class_id.get()
+        if not class_id:
+            messagebox.showwarning("Warning", "Please enter a Class ID!")
+            return
+
+        if messagebox.askyesno("Confirm", f"Are you sure you want to delete class {class_id}?"):
+            try:
+                success = self.db.remove_class(class_id)
+                if success:
+                    messagebox.showinfo("Success", "Class removed successfully!")
+                    self.clear_fields()
+                else:
+                    messagebox.showerror("Error", "Failed to remove class")
+            except Exception as e:
+                messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def search_class(self):
+        """Searches for a class by ID"""
+        class_id = self.var_class_id.get()
+        if not class_id:
+            messagebox.showwarning("Warning", "Please enter a Class ID!")
+            return
+
+        try:
+            class_info = self.db.get_class_by_id(class_id)
+            if class_info:
+                self.var_class_name.set(class_info['class_name'])
+                self.var_teacher.set(class_info['teacher'])
+                self.var_subject.set(class_info['subject'])
+                self.var_schedule.set(class_info['schedule'])
+
+                # Load students in class
+                self.load_students_in_class(class_id)
+                messagebox.showinfo("Found", f"Class {class_id} found!")
+            else:
+                messagebox.showinfo("Not Found", f"Class {class_id} not found!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def add_student_to_class(self):
+        """Adds a student to the current class"""
+        class_id = self.var_class_id.get()
+        student_id = self.var_student_id.get()
+
+        if not class_id:
+            messagebox.showwarning("Warning", "Please search for a class first!")
+            return
+        if not student_id:
+            messagebox.showwarning("Warning", "Please enter a Student ID!")
+            return
+
+        try:
+            success = self.db.add_student_to_class(class_id, student_id)
+            if success:
+                messagebox.showinfo("Success", "Student added to class successfully!")
+                self.load_students_in_class(class_id)
+                self.var_student_id.set("")
+            else:
+                messagebox.showerror("Error", "Failed to add student to class")
+        except Exception as e:
+            messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def load_students_in_class(self, class_id):
+        """Loads all students in the specified class"""
+        # Clear current list
+        for widget in self.students_listbox.winfo_children():
+            widget.destroy()
+
+        try:
+            students = self.db.get_students_in_class(class_id)
+            if students:
+                for student in students:
+                    student_frame = ctk.CTkFrame(
+                        self.students_listbox,
+                        corner_radius=5,
+                        fg_color="#ffffff"
+                    )
+                    student_frame.pack(fill="x", pady=2, padx=5)
+
+                    ctk.CTkLabel(
+                        student_frame,
+                        text=f"{student['student_id']} - {student['name']}",
+                        font=self.font_normal,
+                        text_color=self.secondary_color
+                    ).pack(side="left", padx=10)
+
+                    # Remove button
+                    ctk.CTkButton(
+                        student_frame,
+                        text="✖",
+                        width=30,
+                        height=30,
+                        fg_color=self.danger_color,
+                        hover_color="#c0392b",
+                        command=lambda sid=student['student_id']: self.remove_student_from_class(class_id, sid)
+                    ).pack(side="right", padx=5)
+            else:
+                ctk.CTkLabel(
+                    self.students_listbox,
+                    text="No students in this class",
+                    font=self.font_normal,
+                    text_color="#7f8c8d"
+                ).pack(pady=20)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load students: {str(e)}")
+
+    def remove_student_from_class(self, class_id, student_id):
+        """Removes a student from the class"""
+        if messagebox.askyesno("Confirm", f"Remove student {student_id} from class?"):
+            try:
+                success = self.db.remove_student_from_class(class_id, student_id)
+                if success:
+                    messagebox.showinfo("Success", "Student removed from class!")
+                    self.load_students_in_class(class_id)
+                else:
+                    messagebox.showerror("Error", "Failed to remove student from class")
+            except Exception as e:
+                messagebox.showerror("Error", f"Database error: {str(e)}")
+
+    def clear_fields(self):
+        """Clears all form fields and student list"""
+        for var in [
+            self.var_class_id,
+            self.var_class_name,
+            self.var_teacher,
+            self.var_subject,
+            self.var_schedule,
+            self.var_student_id
+        ]:
+            var.set("")
+
+        # Clear students list
+        for widget in self.students_listbox.winfo_children():
+            widget.destroy()
+
+    def validate_fields(self):
+        """Validates required fields"""
+        if not self.var_class_id.get():
+            messagebox.showwarning("Validation Error", "Class ID is required!")
+            return False
+        if not self.var_class_name.get():
+            messagebox.showwarning("Validation Error", "Class Name is required!")
+            return False
+        if not self.var_teacher.get():
+            messagebox.showwarning("Validation Error", "Teacher is required!")
+            return False
+        return True
