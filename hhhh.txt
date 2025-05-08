@@ -1,101 +1,4 @@
-this is the main.py
-from home import HomePage
-from student import StudentInformation  # should be StudentInformation
-from face_recognition import FaceRecognition
-from settings import SettingsPage
-import capture_faces
-from teacher import TeacherInformation
-from database import AuthDB
-import customtkinter as ctk
-from datetime import datetime
-from login import LoginPage
-from sign_up import SignUpPage
-from database import DatabaseConnection
-from classe import ClassInformation
-class MainApp(ctk.CTk):
-        def __init__(self):
-            super().__init__()
-
-            # Window configuration
-            self.title("School Management System")
-            self.geometry("1200x700")
-            self.minsize(1000, 600)
-
-            # Custom colors
-            self.sidebar_color = "#2c3e50"
-            self.sidebar_button_color = "#34495e"
-            self.sidebar_button_hover = "#3d566e"
-            self.main_bg = "#f5f7fa"
-            self.accent_color = "#3498db"
-
-            # Initial page load
-            self.current_frame = None
-
-            # ✅ Setup database and authentication first!
-            self.db_connection = DatabaseConnection()
-            self.db_connection.connect()
-            self.auth_db = AuthDB(self.db_connection)
-
-            # ✅ Now it's safe to show the login page
-            self.show_login_page()
-        def show_login_page(self):
-            self.clear_current_frame()
-            self.login_page = LoginPage(
-                self,
-                self.on_login_success,
-                self.show_sign_up_page,
-            )
-            self.login_page.pack(fill="both", expand=True)
-            self.current_frame = self.login_page
-
-        def show_sign_up_page(self):
-            self.clear_current_frame()
-            self.sign_up_page = SignUpPage(
-                self,
-                self.on_signup_success,
-                self.show_login_page,
-            )
-            self.sign_up_page.pack(fill="both", expand=True)
-            self.current_frame = self.sign_up_page
-
-        def on_login_success(self):
-            self.clear_current_frame()
-            self.create_main_ui()
-
-        def on_signup_success(self):
-            self.show_login_page()
-
-        def create_main_ui(self):
-            # Layout configuration
-            self.grid_columnconfigure(1, weight=1)
-            self.grid_rowconfigure(0, weight=1)
-
-            # Create UI elements
-            self.create_sidebar()
-            self.create_main_content()
-            self.create_date_label()
-
-            # Initial page load
-            self.load_home()
-            self.update_date_label()
-
-        def clear_current_frame(self):
-            if hasattr(self, 'current_frame') and self.current_frame:
-                self.current_frame.destroy()
-
-        def create_sidebar(self):
-            """Create static sidebar without animations"""
-            self.sidebar = ctk.CTkFrame(
-                self,
-                fg_color=self.sidebar_color,
-                width=250,
-                corner_radius=0
-            )
-            self.sidebar.grid(row=0, column=0, sticky="nsew")
-            self.sidebar.grid_propagate(False)
-
-            # Sidebar content
-            self.create_profile_section()
+this is the 
             self.create_navigation_buttons()
 
         def create_profile_section(self):
@@ -131,20 +34,7 @@ class MainApp(ctk.CTk):
                 text_color="lightgray"
             )
             self.name_label.pack()
-            self.role_label.pack()
-
-        def create_navigation_buttons(self):
-            """Create navigation buttons"""
-            buttons = [
-                ("🏠", "Home", self.load_home),
-                ("📷", "Face Recognition", self.load_face_recognition),
-                ("👨‍🎓", "Student information", self.load_student),
-                ("👨‍🏫", "Teacher information", self.load_teacher),
-                ("👨‍🏫", "Classe information", self.load_class),
-                ("🤖", "Capture Faces", self.load_capture),
-                ("⚙️", "Settings", self.load_setting),
-                ("🚪", "Logout", self.show_login_page)
-            ]
+            self.role_label.pack
 
             for icon, text, command in buttons:
                 btn = ctk.CTkButton(
