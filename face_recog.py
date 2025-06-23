@@ -11,11 +11,9 @@ from datetime import datetime, timedelta
 import time
 import face_recognition
 import logging
-import pytz  # Added for timezone handling
 from database import SeanceDB, AttendanceDB, StudentDB, TeacherDB
 from config import Theme
 
-# Configure logging
 logging.basicConfig(filename='face_recognition.log', level=logging.DEBUG,
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
@@ -196,7 +194,6 @@ class FaceRecognition(ctk.CTkFrame):
         self.seance_end_time = None
         self.after_id = None
         self.seance_widgets = []
-        self.cet_timezone = pytz.timezone('Europe/Paris')  # CET timezone
 
         # Apply theme
         theme_instance = Theme()
@@ -237,6 +234,7 @@ class FaceRecognition(ctk.CTkFrame):
             self.reverse_label_map = None
 
     def setup_ui(self):
+
         self.configure(fg_color=self.theme["background"])
         self.main_frame = ctk.CTkFrame(self, fg_color=self.theme["frame"], corner_radius=6)
         self.main_frame.pack(fill="both", expand=True, padx=20, pady=20)
@@ -423,45 +421,22 @@ class FaceRecognition(ctk.CTkFrame):
             seance_date = str(seance['date'])
             start_time = str(seance['start_time'])
             end_time = str(seance['end_time'])
-            # Ensure times are in HH:MM:SS format
-            if len(start_time.split(':')) == 2:
-                start_time += ':00'
-            if len(end_time.split(':')) == 2:
-                end_time += ':00'
-            logging.info(f"Parsing seance: date={seance_date}, start={start_time}, end={end_time}")
-            # Parse with CET timezone
             start_datetime = datetime.strptime(f"{seance_date} {start_time}", '%Y-%m-%d %H:%M:%S')
             end_datetime = datetime.strptime(f"{seance_date} {end_time}", '%Y-%m-%d %H:%M:%S')
-            start_datetime = self.cet_timezone.localize(start_datetime)
-            end_datetime = self.cet_timezone.localize(end_datetime)
-            logging.info(f"Parsed start_datetime={start_datetime}, end_datetime={end_datetime}")
-            if end_datetime <= start_datetime:
-                raise ValueError("End time must be after start time")
-            self.seance_end_time = start_datetime  # Store start time for duration calculation
             self.seance_end_time = end_datetime
 
-            current_time = datetime.now(self.cet_timezone)
-            logging.info(f"Current time: {current_time}")
-            if (current_time.date() == start_datetime.date() and
-                start_datetime <= current_time <= end_datetime):
+            current_time = datetime.now()
+            if (seance_date == current_time.strftime('%Y-%m-%d') and
+                    start_time <= current_time.strftime('%H:%M:%S') <= end_time):
                 if not self.is_running:
                     self.start_recognition()
                 self.update_duration()
             else:
                 self.stop_recognition()
-                remaining = (start_datetime - current_time).total_seconds()
-                if remaining > 0:
-                    self.duration_label.configure(
-                        text=f"Seance starts in {str(timedelta(seconds=int(remaining)))}"
-                    )
-                else:
-                    self.duration_label.configure(
-                        text=f"Seance ended at {end_time} on {seance_date}"
-                    )
-                self.progress_bar.set(0)
+                self.duration_label.configure(text=f"Seance starts at {start_time} on {seance_date}")
+
         except Exception as e:
             logging.error(f"Error processing seance selection: {e}")
-            messagebox.showerror("Error", f"Invalid seance time: {e}")
             self.seance_label.configure(text="Seance: Error")
             self.duration_label.configure(text="Remaining Time: Error")
 
@@ -503,6 +478,7 @@ class FaceRecognition(ctk.CTkFrame):
                 )
                 button.pack(fill="x", pady=2)
                 self.seance_widgets.append(button)
+
         except Exception as e:
             logging.error(f"Error updating seance list: {e}")
             label = ctk.CTkLabel(
@@ -530,29 +506,19 @@ class FaceRecognition(ctk.CTkFrame):
                 self.update_seance_list()
                 return
 
+            current_time = datetime.now()
             seance_date = str(self.current_seance['date'])
             start_time = str(self.current_seance['start_time'])
             end_time = str(self.current_seance['end_time'])
-            # Ensure times are in HH:MM:SS format
-            if len(start_time.split(':')) == 2:
-                start_time += ':00'
-            if len(end_time.split(':')) == 2:
-                end_time += ':00'
-            logging.info(f"Checking seance: date={seance_date}, start={start_time}, end={end_time}")
+
             start_datetime = datetime.strptime(f"{seance_date} {start_time}", '%Y-%m-%d %H:%M:%S')
             end_datetime = datetime.strptime(f"{seance_date} {end_time}", '%Y-%m-%d %H:%M:%S')
-            start_datetime = self.cet_timezone.localize(start_datetime)
-            end_datetime = self.cet_timezone.localize(end_datetime)
-            self.seance_start_time = start_datetime
             self.seance_end_time = end_datetime
-
-            current_time = datetime.now(self.cet_timezone)
-            logging.info(f"Current time: {current_time}, start={start_datetime}, end={end_datetime}")
 
             self.update_seance_list()
 
-            if (current_time.date() == start_datetime.date() and
-                    start_datetime <= current_time <= end_datetime):
+            if (seance_date == current_time.strftime('%Y-%m-%d') and
+                    start_time <= current_time.strftime('%H:%M:%S') <= end_time):
                 if not self.is_running:
                     self.start_recognition()
                 self.update_duration()
@@ -569,10 +535,10 @@ class FaceRecognition(ctk.CTkFrame):
                         text=f"Seance ended at {end_time} on {seance_date}"
                     )
                 self.progress_bar.set(0)
+
         except Exception as e:
             logging.error(f"Error checking seance: {e}")
             self.seance_label.configure(text="Seance: Error")
-            self.duration_label.configure(text="Remaining Time: Error")
             self.update_seance_list()
         finally:
             if self.winfo_exists():
@@ -668,7 +634,7 @@ class FaceRecognition(ctk.CTkFrame):
 
             person_label = ctk.CTkLabel(
                 self.persons_frame,
-                text=f"{name} ({person_type}) - {datetime.now(self.cet_timezone).strftime('%H:%M:%S')}",
+                text=f"{name} ({person_type}) - {datetime.now().strftime('%H:%M:%S')}",
                 font=self.theme["font_normal"],
                 text_color=get_color(self.theme["secondary"])
             )
@@ -690,51 +656,35 @@ class FaceRecognition(ctk.CTkFrame):
             return color_setting
 
         if not self.is_running or not self.current_seance:
-            self.duration_label.configure(text="Remaining Time: 00:00:00")
-            self.progress_bar.set(0)
             return
 
-        try:
-            current_time = datetime.now(self.cet_timezone)
-            logging.info(f"Updating duration: current_time={current_time}, end_time={self.seance_end_time}")
+        current_time = datetime.now()
+        if self.seance_end_time and current_time >= self.seance_end_time:
+            self.stop_recognition()
+            self.duration_label.configure(
+                text=f"Seance ended at {self.current_seance['end_time']} on {self.current_seance['date']}"
+            )
+            self.progress_bar.set(1)
+            return
 
-            if self.seance_end_time and current_time >= self.seance_end_time:
-                self.stop_recognition()
-                self.duration_label.configure(
-                    text=f"Seance ended at {self.current_seance['end_time']} on {self.current_seance['date']}"
-                )
-                self.progress_bar.set(1)
-                return
+        if self.seance_end_time:
+            remaining = (self.seance_end_time - current_time).total_seconds()
+            total_duration = (self.seance_end_time - datetime.strptime(
+                f"{self.current_seance['date']} {self.current_seance['start_time']}",
+                '%Y-%m-%d %H:%M:%S'
+            )).total_seconds()
+            progress = 1 - (remaining / total_duration) if total_duration > 0 else 0
+            self.progress_bar.set(progress)
+            self.duration_label.configure(
+                text=f"Remaining Time: {str(timedelta(seconds=int(remaining)))}"
+            )
+        else:
+            elapsed = time.time() - self.recognition_start_time
+            self.duration_label.configure(
+                text=f"Session Duration: {str(timedelta(seconds=int(elapsed)))}"
+            )
 
-            if self.seance_end_time and self.seance_start_time:
-                remaining = (self.seance_end_time - current_time).total_seconds()
-                total_duration = (self.seance_end_time - self.seance_start_time).total_seconds()
-                if total_duration > 0:
-                    progress = max(0, min(1, 1 - (remaining / total_duration)))
-                else:
-                    progress = 0
-                self.progress_bar.set(progress)
-                if remaining > 0:
-                    self.duration_label.configure(
-                        text=f"Remaining Time: {str(timedelta(seconds=int(remaining)))}"
-                    )
-                else:
-                    self.duration_label.configure(
-                        text=f"Seance ended at {self.current_seance['end_time']} on {self.current_seance['date']}"
-                    )
-                    self.stop_recognition()
-            else:
-                elapsed = time.time() - self.recognition_start_time
-                self.duration_label.configure(
-                    text=f"Session Duration: {str(timedelta(seconds=int(elapsed)))}"
-                )
-                self.progress_bar.set(0)
-
-            self.after(1000, self.update_duration)
-        except Exception as e:
-            logging.error(f"Error updating duration: {e}")
-            self.duration_label.configure(text="Remaining Time: Error")
-            self.progress_bar.set(0)
+        self.after(1000, self.update_duration)
 
     def stop_recognition(self):
         def get_color(color_setting):

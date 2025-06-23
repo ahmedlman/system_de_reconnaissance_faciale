@@ -9,7 +9,7 @@ from PIL import Image, ImageTk
 import threading
 from datetime import datetime, timedelta
 from time import time
-from config import DATASET_PATH, IMG_SIZE, MODEL_PATH, LABEL_MAP_PATH, DB_CONFIG, FACE_CONFIG, UI_CONFIG
+from config import *
 
 
 class FaceRecognition:

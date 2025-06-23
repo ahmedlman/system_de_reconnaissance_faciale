@@ -1,7 +1,3 @@
-<<<<<<< HEAD
 Ce diagramme montre l'interaction entre le client (une autre classe ou l'interface utilisateur), la classe DatabaseConnection, le serveur MySQL, et l'affichage d'erreur via MessageBox. Si la connexion réussit, un objet de connexion est retourné ; sinon, une erreur est affichée.
 Cette méthode vérifie les informations d’identification d’un utilisateur en comparant le mot de passe haché.
 Ce diagramme montre comment AdminDB récupère la liste des utilisateurs. Après vérification de la connexion, une requête SQL est exécutée pour retourner les données des utilisateurs ou une liste vide en cas d’échec.
-=======
-This for paragraphe pfe et reglage
->>>>>>> 263f666345c0bcb90842933d4acc0f0751c416f0
