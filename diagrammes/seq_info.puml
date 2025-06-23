@@ -1,0 +1,25 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+actor User
+participant "LoginPage"
+participant "MainApp"
+participant "AuthDB"
+participant "DatabaseConnection"
+'add user'
+User -> LoginPage: Enter credentials (username, password)
+LoginPage -> MainApp: on_login_success(username, password)
+MainApp -> AuthDB: validate_user(username, password)
+AuthDB -> DatabaseConnection: connect() and validate
+DatabaseConnection --> AuthDB: user_data or None
+AuthDB --> MainApp: user (dict) or None
+'if the is admin or teacher'
+alt user is admin or teacher
+    MainApp -> MainApp: logged_in_user = user
+    MainApp -> MainApp: create_main_ui()
+else user is invalid
+    MainApp -> LoginPage: Display error (handled by LoginPage)
+end
+
+MainApp --> LoginPage: Success or failure
+@enduml

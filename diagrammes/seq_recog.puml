@@ -1,0 +1,23 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+actor User
+participant "SeanceInformation"
+participant "DatabaseConnection"
+participant "Camera"
+participant "Recognized Person"
+User -> "SeanceInformation":select the seance
+"SeanceInformation" -> "DatabaseConnection":get_seance_by_id(seance_id,date, start_time,end_time)
+"DatabaseConnection" --> "SeanceInformation":seance_id, date, start_time,end_time
+"SeanceInformation" -> "Camera":start_recognition(seance_id, date, start_time,end_time)
+"Camera" -> "Recognized Person":recognize_person()
+"Recognized Person" -> "Camera":record attendance(seance_id, date, start_time,end_time)
+"Camera" -> "SeanceInformation":record attendance(seance_id, date, start_time,end_time)
+"SeanceInformation" -> "DatabaseConnection":update_attendance(seance_id, date, start_time,end_time)
+"DatabaseConnection" --> "SeanceInformation":success/failure
+"SeanceInformation" --> User: display recorded attendance
+
+
+
+
+
+@enduml

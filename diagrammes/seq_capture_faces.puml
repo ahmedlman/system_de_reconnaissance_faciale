@@ -1,0 +1,66 @@
+@startuml
+' https://plantuml.com/sequence-diagram
+
+actor "Utilisateur" as User
+participant "CaptureVisage" as CF
+participant "ReconnaissanceVisage" as FR
+participant "ConnexionBaseDeDonnées" as DB
+participant "Dataset" as Dt
+
+' Récupérer les informations de l'étudiant
+User -> CF : obtenir_info_étudiant(student_id)
+CF -> FR : obtenir_info_étudiant(student_id)
+FR -> DB : récupérer les données de l'étudiant
+DB --> FR : données_étudiant
+FR --> CF : données_étudiant
+CF --> User : données_étudiant
+
+' Récupérer les informations de l'enseignant
+User -> CF : obtenir_info_enseignant(teacher_id)
+CF -> FR : obtenir_info_enseignant(teacher_id)
+FR -> DB : récupérer les données de l'enseignant
+DB --> FR : données_enseignant
+FR --> CF : données_enseignant
+CF --> User : données_enseignant
+
+' Capturer le visage
+User -> CF : capturer_visage(student_id, nom)
+CF -> FR : capturer_visage(student_id, nom)
+FR -> DB : insérer les données du visage
+DB --> FR : id_visage, nom
+FR --> CF : id_visage
+CF --> User : Visage capturé avec succès (ID)
+
+' Mettre à jour le visage
+User -> CF : mettre_à_jour_visage(id_visage, nom)
+CF -> FR : mettre_à_jour_visage(id_visage, nom)
+FR -> DB : mettre à jour les données du visage
+DB --> FR : succès/échec
+FR --> CF : succès/échec
+CF --> User : Visage mis à jour ou erreur
+
+' Sauvegarder le visage dans le jeu de données
+User -> CF : sauvegarder_visage_jeu_données(id_visage, nom)
+CF -> FR : sauvegarder_visage_jeu_données(id_visage, nom)
+FR -> Dataset : sauvegarder le visage dans le dataset
+Dt --> FR : succès/échec
+FR --> CF : succès/échec
+CF --> User : Visage sauvegardé ou erreur
+
+' Entraîner le modèle
+User -> CF : entraîner_modèle()
+CF -> FR : entraîner_modèle()
+FR -> DB : entraîner le modèle
+DB --> FR : succès/échec
+FR --> CF : succès/échec
+CF --> User : Modèle entraîné avec succès ou erreur
+
+' Annuler
+User -> CF : annuler()
+CF -> FR : annuler()
+FR -> DB : annuler l'opération
+DB --> FR : succès/échec
+FR --> CF : succès/échec
+CF --> User : Opération annulée avec succès ou erreur
+
+@enduml

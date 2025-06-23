@@ -1,0 +1,119 @@
+@startuml
+
+' Users class
+class Users {
+  -user_id : int
+  -name : str
+  -email : str
+  -username : str
+  -password : str
+  -role : enum("ADMIN", "TEACHER")
+  +create_user(name: str, email: str, username: str, password: str, role: str) : bool
+  +delete_user(user_id: int) : bool
+  +update_user_role(user_id: int, new_role: str) : bool
+  +validate_user(username: str, password: str) : Dict[bool, str]
+}
+
+' Admin class (inherits from Users)
+class Admin {
+  -is_active : int
+  -method() : Type
+}
+Admin -up-|> Users
+
+' Teachers class
+class Teachers {
+  -teacher_id : int
+  -user_id : int
+  -subject_id : int
+  -hire_date : date
+  -is_active : int
+  -photo : blob
+  +add_teacher(name: str, email: str, username: str, password: str, sin_number: str, specialization: str, hire_date: date, photo: bytes) : bool
+  +get_teacher_by_user_id(user_id: int) : Dict[str, str]
+  +get_all_teachers(active_only: bool) : List[Dict[str, str]]
+  +update_teacher(teacher_id: int, name: str, email: str, username: str, password: str, specialization: str) : bool
+  +remove_teacher(teacher_id: int) : bool
+}
+Teachers "1" -- "1..*" Users : user_id
+Teachers "1..*" -- "1..*" Subjects : subject_id
+
+' Subjects class
+class Subjects {
+  -subject_id : int
+  -subject_name : str
+  +add_subject(subject_name: str) : Dict[bool, int]
+  +get_subject_by_id(subject_id: int) : Dict[bool, str]
+  +get_subject_by_name(subject_name: str) : Dict[bool, int]
+}
+
+' Seances class
+class Seances {
+  -seance_id : int
+  -subject_id : int
+  -teacher_id : int
+  -name_seance : str
+  -date : date
+  -location : str
+  -start_time : time
+  -end_time : time
+  -status : str
+  +create_seance(subject_id: int, teacher_id: int, name: str, date: date, location: str, start_time: time, end_time: time) : bool
+  +get_seances_with_subjects() : List[Dict[str, str]]
+  +check_seance_conflict(date: date, start_time: time, end_time: time, teacher_id: int, seance_id: int) : bool
+  +update_seance(seance_id: int, subject_id: int, teacher_id: int, name: str, date: str, location: str, start_time: str, end_time: str) : bool
+  +delete_seance(seance_id: int) : bool
+}
+Seances "1..*" -- "1..*" Subjects : subject_id
+Seances "1..*" -- "1..*" Teachers : teacher_id
+
+' Classes class
+class Classes {
+  -class_id : int
+  -academic_year : str
+  -create_class(name: str, academic_year: str) : int
+  -update_class(class_id: int, name: str, academic_year: str) : bool
+  -get_class_details(class_id: int) : Dict[str, str]
+  -delete_class(class_id: int) : bool
+  -get_all_classes() : List[Dict]
+}
+Classes "1..*" -- "1..*" Teachers : teachers_has_classes
+Classes "1..*" -- "1..*" Seances : classes_has_seances
+
+' class_students relationship
+class class_students {
+  -id_class_students : int
+  +assign_students_to_class(class_id: int, student_ids: List[int]) : bool
+}
+
+' Students class
+class Students {
+  -student_id : int
+  -full_name : str
+  -number : int
+  -email : str
+  -enrollment_date : date
+  -photo : BLOB
+  +add_student(name: str, number: str, email: str, enrollment_date: date, photo: BLOB) : int
+  +get_student_details(student_id: int) : Dict
+  +update_student(student_id: int, full_name: str, number: str, email: str, enrollment_date: date, photo) : bool
+  +remove_student(student_id: int) : bool
+  +get_all_students() : List[Dict]
+}
+class_students "1..*" -- "1..*" Classes : class_id
+class_students "1..*" -- "1..*" Students : student_id
+
+' Attendance class
+class Attendance {
+  -attendance_id : int
+  -seance_id : int
+  -student_id : int
+  -timestamp : datetime
+  -teacher_user_id : int
+  +record_attendance(seance_id: int, student_id: int, status: str, person_type: str="STUDENT") : bool
+  +get_attendance_by_seance(seance_id: int) : List[Dict]
+}
+Attendance "1..*" -- "1..*" Seances : seance_id
+Attendance "1..*" -- "1..*" Students : student_id
+
+@enduml

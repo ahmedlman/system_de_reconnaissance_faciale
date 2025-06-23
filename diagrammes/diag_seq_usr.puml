@@ -1,0 +1,24 @@
+@startuml
+actor Utilisateur
+participant "LoginPage"
+participant "MainApp"
+participant "AuthDB"
+participant "Database"
+
+Utilisateur -> LoginPage: Saisir les identifiants (username, password)
+LoginPage -> MainApp: on_login_success(username, password)
+MainApp -> AuthDB: validate_user(username, password)
+AuthDB -> Database: connect() et validation
+Database --> AuthDB: user_data ou None
+AuthDB --> MainApp: user (dict) ou None
+alt utilisateur valide
+    MainApp -> MainApp: logged_in_user = user
+    MainApp -> MainApp: create_main_ui()
+else utilisateur invalide
+    MainApp -> LoginPage: Afficher une erreur (gérée par LoginPage)
+end
+MainApp --> LoginPage: Succès ou échec
+Utilisateur -> MainApp: déconnexion()
+MainApp -> AuthDB: logout()
+
+@enduml

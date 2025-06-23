@@ -1,0 +1,41 @@
+@startuml
+' https://plantuml.com/sequence-diagram
+
+actor "Admin" as Admin
+participant "TeacherInformation" as TI
+participant "Teachers" as T
+participant "DatabaseConnection" as DB
+
+' Add Teacher
+Admin -> TI : add_teacher(name, email, username, password, specialization, hire_date, photo)
+TI -> T : add_teacher(data)
+T -> DB : insert teacher data
+DB --> T : teacher_id
+T --> TI : teacher_id
+TI --> Admin : Teacher added
+
+' Update Teacher
+Admin -> TI : update_teacher(teacher_id, data)
+TI -> T : update_teacher(teacher_id, data)
+T -> DB : update teacher data
+DB --> T : success/failure
+T --> TI : success/failure
+TI --> Admin : Teacher updated or error
+
+' Delete Teacher
+Admin -> TI : delete_teacher(teacher_id)
+TI -> T : delete_teacher(teacher_id)
+T -> DB : delete teacher data
+DB --> T : success/failure
+T --> TI : success/failure
+TI --> Admin : Teacher deleted or error
+
+' Display Teachers
+Admin -> TI : get_all_teachers()
+TI -> T : get_all_teachers()
+T -> DB : fetch all teachers
+DB --> T : list of teachers
+T --> TI : list of teachers
+TI --> Admin : list of teachers
+
+@enduml

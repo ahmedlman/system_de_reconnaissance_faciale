@@ -1,0 +1,18 @@
+@startuml
+actor "Caméra" as Camera
+participant "Système (CaptureFaces)" as Systeme
+participant "Dataset" as Dt
+
+Systeme -> Camera : Démarrer la capture des images (id, nom)
+Camera --> Systeme : Fournir les images
+Systeme -> Systeme : Détecter les visages dans les images
+Systeme -> Dt : Sauvegarder les images dans le dataset
+Dt --> Systeme : Confirmer la sauvegarde
+Systeme --> Camera : Arrêter la capture
+Systeme -> Dt : Entraîner le modèle avec le dataset et sauvegarder dans un fichier
+Dt --> Systeme : Modèle entraîné avec succès
+Systeme --> Camera : Processus terminé, modèle prêt
+Systeme -> Systeme : Charger le modèle à partir du fichier
+Systeme -> Camera : Utiliser le modèle pour la reconnaissance des visages (id, nom)
+
+@enduml

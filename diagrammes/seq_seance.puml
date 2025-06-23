@@ -1,0 +1,65 @@
+@startuml
+' https://plantuml.com/sequence-diagram
+
+actor "Utilisateur" as User
+participant "InfoSéance" as SI
+participant "SéancesDB" as SDB
+participant "ConnexionBaseDeDonnées" as DB
+
+' Créer une séance
+User -> SI : Demander création de séance
+SI -> SDB : Transmettre demande
+SDB -> DB : Enregistrer séance
+DB --> SDB : Confirmation
+SDB --> SI : Confirmation
+SI --> User : Séance créée
+
+' Vérifier les conflits
+User -> SI : Vérifier conflits
+SI -> SDB : Vérifier conflits
+SDB -> DB : Vérifier conflits
+DB --> SDB : Résultat (oui/non)
+SDB --> SI : Résultat (oui/non)
+SI --> User : Conflit ou non
+
+' Mettre à jour une séance
+User -> SI : Demander mise à jour
+SI -> SDB : Transmettre mise à jour
+SDB -> DB : Mettre à jour séance
+DB --> SDB : Confirmation
+SDB --> SI : Confirmation
+SI --> User : Séance mise à jour
+
+' Supprimer une séance
+User -> SI : Demander suppression
+SI -> SDB : Transmettre suppression
+SDB -> DB : Supprimer séance
+DB --> SDB : Confirmation
+SDB --> SI : Confirmation
+SI --> User : Séance supprimée
+
+' Afficher toutes les séances
+User -> SI : Demander toutes les séances
+SI -> SDB : Demander toutes les séances
+SDB -> DB : Récupérer toutes les séances
+DB --> SDB : Liste des séances
+SDB --> SI : Liste des séances
+SI --> User : Liste des séances
+
+' Rechercher des séances
+User -> SI : Rechercher séances
+SI -> SDB : Rechercher séances
+SDB -> DB : Rechercher séances
+DB --> SDB : Liste des séances
+SDB --> SI : Liste des séances
+SI --> User : Liste des séances trouvées
+
+' Afficher séances avec sujets
+User -> SI : Demander séances avec sujets
+SI -> SDB : Demander séances avec sujets
+SDB -> DB : Récupérer séances avec sujets
+DB --> SDB : Liste des séances avec sujets
+SDB --> SI : Liste des séances avec sujets
+SI --> User : Liste des séances avec sujets
+
+@enduml

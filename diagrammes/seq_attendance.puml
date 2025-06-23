@@ -1,0 +1,25 @@
+@startuml
+actor Teacher
+participant "SeanceInformation"
+participant "Sessions"
+participant "Students"
+participant "Attendance"
+
+Teacher -> SeanceInformation: create_seances(subject_id, teacher_id, name, date, location, start_time, end_time, status)
+SeanceInformation -> Sessions: create_seances(subject_id, teacher_id, name, date, location, start_time, end_time, status)
+Sessions --> SeanceInformation: seance_id
+SeanceInformation -> Sessions: check_seance_conflict(date, start_time, end_time, teacher_id)
+Sessions --> SeanceInformation: true/false
+
+alt no conflict
+    loop for each Student
+        SeanceInformation -> Students: get_student_by_id(student_id)
+        Students --> SeanceInformation: student_data
+        SeanceInformation -> Attendance: record_attendance(seance_id, student_id, timestamp, status, person_type)
+        Attendance --> SeanceInformation: success/failure
+    end
+else conflict exists
+    SeanceInformation -> Teacher: Display conflict error
+end
+SeanceInformation --> Teacher: Session created and attendance recorded or error
+@enduml

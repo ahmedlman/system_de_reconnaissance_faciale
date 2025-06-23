@@ -1,0 +1,49 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+actor Admin
+actor Enseignant
+actor Étudiant
+actor Caméra
+
+rectangle "Système de Gestion de Présence" {
+
+    usecase "Authentification manuelle" as AuthManuelle
+    usecase "Authentification automatique" as AuthAuto
+    usecase "Gérer Enseignants" as UC_Enseignants
+    usecase "Gérer Étudiants" as UC_Etudiants
+    usecase "Gérer Classes" as UC_Classes
+    usecase "Gérer Matières" as UC_Matieres
+    usecase "Gérer Séances" as UC_Seances
+    usecase "Déclencher détection" as UC_Detection
+    usecase "Capturer image" as UC_Capture
+    usecase "Enregistrer dataset" as UC_Dataset
+    usecase "Reconnaissance faciale (SVM)" as UC_SVM
+    usecase "Marquer présence" as UC_Presence
+
+    Admin --> AuthManuelle
+    Enseignant --> AuthManuelle
+
+    Admin --> UC_Enseignants
+    Admin --> UC_Etudiants
+    Admin --> UC_Classes
+    Admin --> UC_Matieres
+    Admin --> UC_Seances
+
+    Enseignant --> UC_Seances
+    Enseignant --> UC_Detection
+
+    Étudiant --> AuthAuto : <<automatique>>
+    Enseignant --> AuthAuto : <<automatique>>
+
+    Caméra --> UC_Capture
+    UC_Capture --> UC_Dataset : <<include>>
+    UC_Dataset --> UC_SVM : <<include>>
+    UC_SVM --> AuthAuto : <<include>>
+    AuthAuto --> UC_Presence : <<include>>
+
+    UC_Seances --> UC_Matieres : <<include>>
+    UC_Seances --> UC_Etudiants : <<include>>
+    UC_Etudiants --> UC_Classes : <<include>>
+}
+@enduml

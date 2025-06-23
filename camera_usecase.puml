@@ -1,0 +1,20 @@
+@startuml
+left to right direction
+actor Camera <<System>> as camera
+
+rectangle "Attendance System" {
+  usecase "Capture Images" as uc1
+  usecase "Recognize Faces" as uc2
+  usecase "Submit Attendance Data" as uc3
+  usecase "Self-Diagnose" as uc4
+  
+  camera --> uc1
+  camera --> uc2
+  camera --> uc3
+  camera --> uc4
+  
+  uc3 .> uc1 : include
+  uc3 .> uc2 : include
+  uc4 .> (Check Connectivity) : extend
+}
+@enduml
