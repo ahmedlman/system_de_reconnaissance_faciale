@@ -955,3 +955,4 @@ class AttendanceDB:
         finally:
             if cursor:
                 cursor.close()
+
