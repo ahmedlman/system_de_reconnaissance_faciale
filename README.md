@@ -33,7 +33,16 @@ Ce projet vise à développer un système de gestion de la présence des élève
 | Python          | Langage principal de développement         |
 | OpenCV          | Capture vidéo et traitement d'image        |
 | TensorFlow      | Modèle CNN MobileNetV2 pour la reconnaissance faciale |
-| Mediapipe       | Détection des visages (optionnelle/alternative) |
+| Dlib           | Détection des points du visage et encodage |
+| NumPy           | Manipulation de données et calculs mathématiques |
+| Pandas          | Gestion des données et statistiques        |
+| Matplotlib      | Visualisation des données                  |
+| scikit-learn    | Prétraitement des données et évaluation du modèle |
+| Flask           | Serveur web pour l'API REST (si nécessaire) |
+| SQLite/MySQL    | Base de données pour stocker les utilisateurs et présences |
+| Pillow          | Traitement d'images (redimensionnement, etc.) |
+| Haar Cascade    | Détection de visages avec classifieur pré-entraîné |
+| face_recognition | Reconnaissance faciale simplifiée         |
 | CustomTkinter   | Création de l'interface utilisateur moderne |
 | MySQL           | Stockage des utilisateurs, présences, rôles |
 | threading       | Pour le traitement parallèle (vidéo, UI, etc.) |
