@@ -2,8 +2,8 @@
 
 > 📅 Projet de Fin d'Études – Année Universitaire 2024/2025  
 > 🏢 Réalisé chez Kernel SI (Kernel Solutions and Innovation) – Hammam-Lif  
-> 👨‍💻 Réalisé par : Ahmed  
-> 🎯 Encadré par : [Nom de l'encadrant académique / industriel]
+> 👨‍💻 Réalisé par : Ahmed Manai
+> 🎯 Encadré par : Khalil Mkaissi
 
 ---
 
@@ -18,7 +18,7 @@ Ce projet vise à développer un système de gestion de la présence des élève
 - 🔐 Authentification des utilisateurs avec gestion des rôles (Admin, Enseignant, Étudiant)
 - 📷 Détection et reconnaissance faciale en temps réel avec caméra
 - ⏰ Reconnaissance limitée à une plage horaire définie
-- 🧠 Modèle CNN (MobileNetV2) intégré pour l’entraînement et la reconnaissance
+- 🧠 Modèle CNN intégré pour l’entraînement et la reconnaissance
 - 🗓️ Suivi de présence journalier avec statistiques (présents, absents, retards)
 - 🧑‍🏫 Gestion des enseignants et des étudiants avec photos et informations complètes
 - 📊 Tableau de bord interactif avec indicateurs clés
@@ -33,7 +33,6 @@ Ce projet vise à développer un système de gestion de la présence des élève
 | Python          | Langage principal de développement         |
 | OpenCV          | Capture vidéo et traitement d'image        |
 | TensorFlow      | Modèle CNN MobileNetV2 pour la reconnaissance faciale |
-| Mediapipe       | Détection des visages (optionnelle/alternative) |
 | CustomTkinter   | Création de l'interface utilisateur moderne |
 | MySQL           | Stockage des utilisateurs, présences, rôles |
 | threading       | Pour le traitement parallèle (vidéo, UI, etc.) |
@@ -61,8 +60,6 @@ Ce projet vise à développer un système de gestion de la présence des élève
 📄 home.py, main.py # Interface principale et navigation
 📄 seance.py # Gestion des séances / plages horaires
 📄 settings.py # Paramètres de l’application
-📄 shape_predictor_68_face_landmarks.dat(.bz2) # Modèle Dlib de détection des points du visage
-📄 haarcascade_frontalface_default.xml # Classifieur Haar pour la détection des visages
 📄 face_encodings.pickle # Données encodées pour la reconnaissance
 📄 database.sql # Script SQL de création de base de données
 📄 diagram star.mwb # Modèle de base de données (MySQL Workbench)
