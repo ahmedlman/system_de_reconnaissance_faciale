@@ -2,22 +2,40 @@
 'https://plantuml.com/sequence-diagram
 
 'sign_up'
-actor User
-participant "Sign UpPage"
-participant "MainApp"
-participant "AuthDB"
-participant "DatabaseConnection"
-User -> SignUpPage: Enter credentials (name,email,username, password,role)
-SignUpPage -> MainApp: on_sign_up_success(name,email,username, password,role)
-MainApp -> AuthDB: create_user(name,email,username, password,role)
-AuthDB -> DatabaseConnection: connect() and create_user
-DatabaseConnection --> AuthDB: user_data or None
-AuthDB --> MainApp: user (dict) or None
-alt user is valid
-    MainApp -> MainApp: logged_in_user = user
-    MainApp -> MainApp: create_main_ui()
-else user is invalid
-    MainApp -> SignUpPage: Display error (handled by SignUpPage)
+actor Utilisateur
+participant "Interface SignUpPage" as UI
+participant "Classe AuthDB" as AuthDB
+participant "Base de Données" as DB
+== Saisie des informations ==
+Utilisateur -> UI : Remplit le nom d'utilisateur, mot de passe et email
+Utilisateur -> UI : Clique sur le bouton "Sign Up"
+activate UI
+== Validation des champs ==
+UI -> UI : Vérifie si les champs sont remplis
+
+alt Champs manquants
+    UI -> Utilisateur : Affiche une erreur
+    deactivate UI
+else Champs valides
+    UI -> AuthDB : validate_signup(username, password, email)
+    activate AuthDB
+    AuthDB -> DB : Vérifie si l'utilisateur existe déjà
+    DB --> AuthDB : Résultat utilisateur (Vrai ou Faux)
+    AuthDB --> UI : Renvoie True si l'utilisateur peut être créé, sinon False
+    deactivate AuthDB
+
+    alt Utilisateur déjà existant
+        UI -> Utilisateur : Affiche "Nom d'utilisateur déjà pris"
+    else Utilisateur valide
+        UI -> DB : Enregistre les informations de l'utilisateur
+        DB --> UI : Confirmation de l'enregistrement
+
+    end
+    deactivate UI
 end
-MainApp --> SignUpPage: Success or failure
+== Fin de l'inscription ==
+'retourne login page'
+UI -> Utilisateur : Affiche "Inscription réussie, veuillez vous connecter"
+
+
 @enduml

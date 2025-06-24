@@ -1,24 +1,34 @@
 @startuml
+
 actor Utilisateur
-participant "LoginPage"
-participant "MainApp"
-participant "AuthDB"
-participant "Database"
+participant "Interface LoginPage" as UI
+participant "Classe AuthDB" as AuthDB
+participant "Base de Données" as DB
 
-Utilisateur -> LoginPage: Saisir les identifiants (username, password)
-LoginPage -> MainApp: on_login_success(username, password)
-MainApp -> AuthDB: validate_user(username, password)
-AuthDB -> Database: connect() et validation
-Database --> AuthDB: user_data ou None
-AuthDB --> MainApp: user (dict) ou None
-alt utilisateur valide
-    MainApp -> MainApp: logged_in_user = user
-    MainApp -> MainApp: create_main_ui()
-else utilisateur invalide
-    MainApp -> LoginPage: Afficher une erreur (gérée par LoginPage)
+== Saisie des identifiants ==
+Utilisateur -> UI : Remplit le nom d'utilisateur et mot de passe
+Utilisateur -> UI : Clique sur le bouton "Login"
+activate UI
+
+== Validation des champs ==
+UI -> UI : Vérifie si les champs sont remplis
+alt Champs manquants
+    UI -> Utilisateur : Affiche une erreur
+    deactivate UI
+else Champs valides
+    UI -> AuthDB : validate_user(username, password)
+    activate AuthDB
+    AuthDB -> DB : Vérifie les identifiants en base
+    DB --> AuthDB : Résultat utilisateur (Vrai ou Faux)
+    AuthDB --> UI : Renvoie True si valide, sinon False
+    deactivate AuthDB
+
+    alt Identifiants corrects
+        UI -> UI : on_login_success()
+        UI --> Utilisateur : Accès accordé
+    else Mauvais identifiants
+        UI -> Utilisateur : Affiche "Identifiant ou mot de passe incorrect"
+    end
+    deactivate UI
 end
-MainApp --> LoginPage: Succès ou échec
-Utilisateur -> MainApp: déconnexion()
-MainApp -> AuthDB: logout()
-
 @enduml

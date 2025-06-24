@@ -1,33 +1,83 @@
 @startuml
-actor User
-participant "StudentInformation"
-participant "Students"
-participant "DatabaseConnection"
-User -> StudentInformation: add_student(full_name, number, email, enrollment_date, photo)
-StudentInformation -> Students: add_student(full_name, number, email, enrollment_date, photo)
-Students -> DatabaseConnection: connect() and insert student data
-DatabaseConnection --> Students: student_id
-Students --> StudentInformation: student_id
-StudentInformation --> User: Student added successfully with ID
-User -> StudentInformation: update_student(student_id, full_name, number, email, enrollment_date, photo)
-StudentInformation -> Students: update_student(student_id, full_name, number, email, enrollment_date, photo)
-Students -> DatabaseConnection: connect() and update student data
-DatabaseConnection --> Students: success/failure
-Students --> StudentInformation: success/failure
-StudentInformation --> User: Student updated successfully or error
-'remove_student'
-User -> StudentInformation: delete_student(student_id)
-StudentInformation -> Students: delete_student(student_id)
-Students -> DatabaseConnection: connect() and delete student data
-DatabaseConnection --> Students: success/failure
-Students --> StudentInformation: success/failure
-StudentInformation --> User: Student deleted successfully or error
-'display_all_students'
-User -> StudentInformation: get_all_students()
-StudentInformation -> Students: get_all_students()
-Students -> DatabaseConnection: connect() and fetch all students
-DatabaseConnection --> Students: list of students
-Students --> StudentInformation: list of students
-StudentInformation --> User: list of students
 
+actor "Enseignant" as User
+participant "Interface" as UI
+participant "Système" as System
+participant "Base de Données" as DB
+
+== 1. Ajout d'Étudiant ==
+User -> UI : "Clique sur 'Ajouter Étudiant'"
+activate UI
+UI -> System : "Transmet les informations"
+activate System
+System -> DB : "Enregistre nouvel étudiant"
+activate DB
+DB --> System : "Confirmation d'enregistrement"
+deactivate DB
+System --> UI : "ID attribué"
+deactivate System
+UI --> User : "Affiche: 'Étudiant ajouté avec succès'"
+deactivate UI
+
+== 2. Modification l'étudiant ==
+User -> UI : "Clique sur 'Modifier'"
+activate UI
+UI -> System : "Demande de modification"
+activate System
+System -> DB : "Vérifie existence étudiant"
+activate DB
+alt Existe
+    DB --> System : "Données actuelles"
+    System -> DB : "Mise à jour informations"
+    DB --> System : "Confirmation"
+    deactivate DB
+    System --> UI : "Modification réussie"
+    deactivate System
+    UI --> User : "Affiche: 'Fiche mise à jour'"
+else N'existe pas
+    DB --> System : "Non trouvé"
+    deactivate DB
+    System --> UI : "Erreur"
+    deactivate System
+    UI --> User : "Affiche: 'Étudiant introuvable'"
+end
+deactivate UI
+
+== 3. Suppression l'étudiant ==
+User -> UI : "Clique sur 'Supprimer'"
+activate UI
+UI -> System : "Demande de suppression"
+activate System
+System -> DB : "Vérifie existence"
+activate DB
+alt Existe
+    DB --> System : "Confirme existence"
+    System -> DB : "Supprime l'étudiant"
+    DB --> System : "Confirmation"
+    deactivate DB
+    System --> UI : "Suppression réussie"
+    deactivate System
+    UI --> User : "Affiche: 'Étudiant supprimé'"
+else N'existe pas
+    DB --> System : "Non trouvé"
+    deactivate DB
+    System --> UI : "Erreur"
+    deactivate System
+    UI --> User : "Affiche: 'Étudiant introuvable'"
+end
+deactivate UI
+
+== 4. Liste des étudiants==
+User -> UI : "Clique sur 'Liste Étudiants'"
+activate UI
+UI -> System : "Demande la liste"
+activate System
+System -> DB : "Récupère tous les étudiants"
+activate DB
+DB --> System : "Liste complète"
+deactivate DB
+System --> UI : "Données formatées"
+deactivate System
+UI --> User : "Affiche tableau clair des étudiants"
+deactivate UI
 @enduml

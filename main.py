@@ -55,7 +55,9 @@ class MainApp(ctk.CTk):
 
     def show_login_out_page(self):
         self.clear_current_frame()
-        self.show_login_page()  # Redirect to login page instead of destroying the app
+        "destroy the app"
+        self.destroy()
+
 
     def show_sign_up_page(self):
         self.clear_current_frame()

@@ -1,18 +1,41 @@
 @startuml
-actor "Caméra" as Camera
-participant "Système (CaptureFaces)" as Systeme
-participant "Dataset" as Dt
+actor Utilisateur
+participant "Interface CaptureFaces" as UI
+participant "Classe Camera" as Camera
+participant "Librairie face_recognition" as FR
+participant "Système de Fichiers" as FS
+participant "Base de Données" as DB
 
-Systeme -> Camera : Démarrer la capture des images (id, nom)
-Camera --> Systeme : Fournir les images
-Systeme -> Systeme : Détecter les visages dans les images
-Systeme -> Dt : Sauvegarder les images dans le dataset
-Dt --> Systeme : Confirmer la sauvegarde
-Systeme --> Camera : Arrêter la capture
-Systeme -> Dt : Entraîner le modèle avec le dataset et sauvegarder dans un fichier
-Dt --> Systeme : Modèle entraîné avec succès
-Systeme --> Camera : Processus terminé, modèle prêt
-Systeme -> Systeme : Charger le modèle à partir du fichier
-Systeme -> Camera : Utiliser le modèle pour la reconnaissance des visages (id, nom)
+== Sélection d'un élève ou enseignant ==
+Utilisateur -> UI : Double-clic sur un nom
+activate UI
+UI -> UI : start_capture()
+
+== Initialisation de la caméra ==
+UI -> Camera : créer et démarrer caméra
+activate Camera
+Camera -> Camera : ouvrir le flux vidéo
+Camera --> UI : retour OK
+deactivate Camera
+
+== Détection des visages ==
+loop Chaque frame (en thread)
+    UI -> Camera : get_frame()
+    Camera --> UI : retourne l’image
+    UI -> FR : détecter les visages
+    FR --> UI : liste des visages détectés
+
+    alt visage détecté et qualité suffisante
+        UI -> FS : sauvegarder image dans dossier dataset/
+        FS --> UI : image sauvegardée
+        UI -> UI : incrémenter compteur images
+    end
+end
+
+== Fin de la capture ==
+UI -> DB : enregistrer chemin des images
+DB --> UI : confirmation mise à jour
+UI --> Utilisateur : Message "Capture terminée avec succès"
+deactivate UI
 
 @enduml

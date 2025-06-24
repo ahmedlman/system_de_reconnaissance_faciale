@@ -1,53 +1,54 @@
 @startuml
 ' https://plantuml.com/sequence-diagram
 
-actor "Utilisateur" as User
-participant "InfoClasse" as CI
-participant "Classes" as C
-participant "ConnexionBaseDeDonnées" as DB
-
-' Ajouter une classe, un sujet, une séance, un étudiant et un enseignant
-User -> CI : créer_classe(nom_classe, code_classe, id_enseignant, date_début, date_fin)
-User -> CI : ajouter_sujet(id_classe, nom_sujet, id_enseignant)
-User -> CI : ajouter_séance(id_classe, id_sujet, id_enseignant, nom, date, lieu, heure_début, heure_fin, statut)
-User -> CI : ajouter_étudiant(id_classe, id_étudiant)
-User -> CI : ajouter_enseignant(id_classe, id_enseignant)
-CI -> C : ajouter_classe(données_classe)
-C -> DB : insérer les données de la classe
-DB --> C : id_classe
-C --> CI : id_classe
-CI -> C : ajouter_sujet(id_classe, nom_sujet, id_enseignant)
-C -> DB : insérer les données du sujet
-DB --> C : id_sujet
-C --> CI : id_sujet
-CI -> C : ajouter_séance(id_classe, id_sujet, id_enseignant, nom, date, lieu, heure_début, heure_fin, statut)
-C -> DB : insérer les données de la séance
-DB --> C : id_séance
-C --> CI : id_séance
-CI -> C : ajouter_étudiant(id_classe, id_étudiant)
-C -> DB : insérer les données de l'étudiant
-DB --> C : id_étudiant
-C --> CI : id_étudiant
-CI -> C : ajouter_enseignant(id_classe, id_enseignant)
-C -> DB : insérer les données de l'enseignant
-DB --> C : id_enseignant
-C --> CI : id_enseignant
-CI --> User : Classe, sujet, séance, étudiant et enseignant ajoutés avec succès (IDs)
-
-' Mettre à jour une classe
-User -> CI : mettre_à_jour_classe(id_classe, données_classe)
-CI -> C : mettre_à_jour_classe(id_classe, données_classe)
-C -> DB : mettre à jour les données de la classe
-DB --> C : succès/échec
-C --> CI : succès/échec
-CI --> User : Classe mise à jour avec succès ou erreur
-
-' Supprimer une classe
-User -> CI : supprimer_classe(id_classe)
-CI -> C : supprimer_classe(id_classe)
-C -> DB : supprimer les données de la classe
-DB --> C : succès/échec
-C --> CI : succès/échec
-CI --> User : Classe supprimée avec succès ou erreur
-
+' seq_classes'
+actor Utilisateur
+participant "Interface Classe" as UI
+participant "Classe ClasseDB" as ClasseDB
+participant "Base de Données" as DB
+' == 1. Création d'une classe ==
+Utilisateur -> UI : "Clique sur 'Créer Classe'"
+activate UI
+UI -> UI : "Affiche formulaire de création"
+UI -> ClasseDB : "create_class(nom_classe, niveau)"
+activate ClasseDB
+ClasseDB -> DB : "Enregistre la nouvelle classe"
+DB --> ClasseDB : "Confirmation d'enregistrement"
+ClasseDB --> UI : "ID de la classe créée"
+deactivate ClasseDB
+UI --> Utilisateur : "Affiche: 'Classe créée avec succès'"
+deactivate UI
+' == 2. Modification d'une classe ==
+Utilisateur -> UI : "Clique sur 'Modifier Classe'"
+activate UI
+UI -> UI : "Affiche formulaire de modification"
+UI -> ClasseDB : "update_class(id_classe, nouveau_nom, Annee_scolaire)"
+activate ClasseDB
+ClasseDB -> DB : "Met à jour les informations de la classe"
+DB --> ClasseDB : "Confirmation de mise à jour"
+ClasseDB --> UI : "Modification réussie"
+deactivate ClasseDB
+UI --> Utilisateur : "Affiche: 'Classe mise à jour avec succès'"
+deactivate UI
+' == 3. Suppression d'une classe ==
+Utilisateur -> UI : "Clique sur 'Supprimer Classe'"
+activate UI
+UI -> ClasseDB : "delete_class(id_classe)"
+activate ClasseDB
+ClasseDB -> DB : "Supprime la classe"
+DB --> ClasseDB : "Confirmation de suppression"
+ClasseDB --> UI : "Suppression réussie"
+deactivate ClasseDB
+UI --> Utilisateur : "Affiche: 'Classe supprimée avec succès'"
+deactivate UI
+' == 4. Affichage des classes ==
+Utilisateur -> UI : "Clique sur 'Afficher Classes'"
+activate UI
+UI -> ClasseDB : "get_all_classes()"
+activate ClasseDB
+ClasseDB -> DB : "Récupère la liste des classes"
+DB --> ClasseDB : "Liste des classes"
+ClasseDB --> UI : "Renvoie la liste des classes"
+deactivate ClasseDB
+UI --> Utilisateur : "Affiche la liste des classes"
 @enduml
