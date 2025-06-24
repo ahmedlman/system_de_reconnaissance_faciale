@@ -18,8 +18,8 @@ Ce projet vise à développer un système de gestion de la présence des élève
 - 🔐 Authentification des utilisateurs avec gestion des rôles (Admin, Enseignant, Étudiant)
 - 📷 Détection et reconnaissance faciale en temps réel avec caméra
 - ⏰ Reconnaissance limitée à une plage horaire définie
-- 🧠 Modèle CNN (MobileNetV2) intégré pour l’entraînement et la reconnaissance
-- 🗓️ Suivi de présence journalier avec statistiques (présents, absents, retards)
+- 🧠 Modèle CNN intégré pour l’entraînement et la reconnaissance
+- 🗓️ Suivi de présence journalier avec statistiques (présents, absents)
 - 🧑‍🏫 Gestion des enseignants et des étudiants avec photos et informations complètes
 - 📊 Tableau de bord interactif avec indicateurs clés
 - 🛠️ Interface graphique moderne et responsive construite avec [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
