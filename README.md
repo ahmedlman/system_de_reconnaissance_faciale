@@ -32,7 +32,7 @@ Ce projet vise à développer un système de gestion de la présence des élève
 |----------------|--------------------------------------------|
 | Python          | Langage principal de développement         |
 | OpenCV          | Capture vidéo et traitement d'image        |
-| TensorFlow      | Modèle CNN MobileNetV2 pour la reconnaissance faciale |
+| TensorFlow      | Modèle CNN pour la reconnaissance faciale |
 | Dlib           | Détection des points du visage et encodage |
 | NumPy           | Manipulation de données et calculs mathématiques |
 | Pandas          | Gestion des données et statistiques        |
