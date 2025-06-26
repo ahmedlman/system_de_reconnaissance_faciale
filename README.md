@@ -56,7 +56,7 @@ Ce projet vise à développer un système de gestion de la présence des élève
 📁 dataset/ # Données d’entraînement pour le modèle
 📁 models/ # Modèles enregistrés (CNN, encodings, etc.)
 📁 photo/ # Photos des élèves/enseignants
-📁 Diagrammes/ # Modèles de base de données (MySQL Workbench)
+📁 Diagrammes/ # Les diagrammes du système 
 📁 venv/ # Environnement virtuel Python
 
 📄 capture_faces.py # Capture d’images de visages
