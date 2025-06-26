@@ -3,7 +3,7 @@
 > 📅 Projet de Fin d'Études – Année Universitaire 2024/2025  
 > 🏢 Réalisé chez Kernel SI (Kernel Solutions and Innovation) – Hammam-Lif  
 > 👨‍💻 Réalisé par : Ahmed  
-> 🎯 Encadré par : [Nom de l'encadrant académique / industriel]
+> 🎯 Encadré par : Mr.Khalil Mkaissi
 
 ---
 
